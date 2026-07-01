@@ -579,6 +579,7 @@
     </div>
     <div class="topbar-actions">
       <span id="draft-status" style="font-size:12px;color:var(--muted);white-space:nowrap;"></span>
+      <button class="btn btn-ghost" style="font-size:12px;" onclick="syncFromCloud()" title="從 Google Sheets 拉取最新資料">☁ 同步</button>
       <button class="btn btn-ghost" onclick="clearForm()">🗑 清除</button>
       <button class="btn btn-ghost" onclick="window.print()">🖨 列印</button>
       <button class="btn btn-primary" onclick="saveReport()">💾 儲存日報表</button>
@@ -978,9 +979,31 @@
       </div>
 
       <!-- 工班出勤 -->
-      <div class="card">
-        <div class="card-header"><div class="card-title"><span class="icon">👷</span> 工班出勤（人次/日）</div></div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">👷</span> 工班出勤（人次）</div></div>
         <div class="card-body" id="worker-bar-chart"><!-- JS --></div>
+      </div>
+
+      <!-- 設備累積使用天數 -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">🏗️</span> 設備機具累積使用天數</div></div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table class="history-table" id="m-equipment-table">
+              <thead>
+                <tr>
+                  <th>設備名稱</th>
+                  <th>設備單位</th>
+                  <th style="text-align:right;">使用次數（筆）</th>
+                  <th style="text-align:right;">累積天數（天）</th>
+                </tr>
+              </thead>
+              <tbody id="m-equipment-tbody">
+                <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">尚無設備資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- 缺失統計 -->
@@ -1003,28 +1026,6 @@
               <div class="kpi-value" id="m-defect-open">–</div>
               <div class="kpi-sub">尚待處理</div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 設備累積使用天數 -->
-      <div class="card" style="margin-top:16px;">
-        <div class="card-header"><div class="card-title"><span class="icon">🏗️</span> 設備機具累積使用天數</div></div>
-        <div class="card-body" style="padding:0;">
-          <div class="table-wrap">
-            <table class="history-table" id="m-equipment-table">
-              <thead>
-                <tr>
-                  <th>設備名稱</th>
-                  <th>設備單位</th>
-                  <th style="text-align:right;">使用次數（筆）</th>
-                  <th style="text-align:right;">累積天數（天）</th>
-                </tr>
-              </thead>
-              <tbody id="m-equipment-tbody">
-                <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">尚無設備資料</td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -1506,6 +1507,8 @@ function init() {
   }
 
   startDraftTimer();
+  // 開啟時從雲端同步（背景執行，不阻塞介面）
+  syncFromCloud();
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
@@ -1610,6 +1613,61 @@ function restoreDraft(draft) {
 function startDraftTimer() {
   if (draftTimer) clearInterval(draftTimer);
   draftTimer = setInterval(saveDraft, 30000); // 每 30 秒自動儲存
+}
+
+// ════════════════ 雲端同步 ════════════════
+function syncFromCloud() {
+  if (!GAS_URL) return;
+  var statusEl = document.getElementById('draft-status');
+  if (statusEl) statusEl.textContent = '☁ 同步中…';
+
+  fetch(GAS_URL)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.ok || !Array.isArray(data.reports) || !data.reports.length) {
+        if (statusEl) statusEl.textContent = '';
+        return;
+      }
+      var changed = false;
+      data.reports.forEach(function(cloudReport) {
+        if (!cloudReport.date) return;
+        var idx = reports.findIndex(function(r){ return r.date === cloudReport.date; });
+        if (idx < 0) {
+          // 本機沒有這筆 → 直接加入
+          reports.push(cloudReport);
+          changed = true;
+        } else {
+          // 比較 savedAt，取較新的
+          var localTime  = reports[idx].savedAt || '';
+          var cloudTime  = cloudReport.savedAt  || '';
+          if (cloudTime > localTime) {
+            reports[idx] = cloudReport;
+            changed = true;
+          }
+        }
+      });
+      if (changed) {
+        reports.sort(function(a,b){ return b.date.localeCompare(a.date); });
+        try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
+        // 若目前在歷史/月報頁面，立即刷新
+        var activeView = document.querySelector('.view.active');
+        if (activeView) {
+          var id = activeView.id;
+          if (id === 'view-history')  renderHistory();
+          if (id === 'view-monthly')  renderMonthly();
+          if (id === 'view-tracker')  renderTracker();
+          if (id === 'view-materials') renderMaterialsView();
+        }
+        if (statusEl) statusEl.textContent = '☁ 已從雲端同步 ' + data.reports.length + ' 筆';
+        setTimeout(function(){ if (statusEl) statusEl.textContent = ''; }, 4000);
+      } else {
+        if (statusEl) statusEl.textContent = '';
+      }
+    })
+    .catch(function() {
+      // 離線或 GAS 無回應，靜默失敗
+      if (statusEl) statusEl.textContent = '';
+    });
 }
 
 function clearDraft() {
@@ -2198,12 +2256,13 @@ function saveReport() {
   showToast('日報表已儲存，正在同步至 Google Sheets…');
   fetch(GAS_URL, {
     method: 'POST',
-    mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
-  }).then(() => {
-    showToast('✓ 已同步至 Google Sheets（' + date + '）');
-  }).catch(() => {
+  }).then(function(res) { return res.json(); })
+  .then(function(r) {
+    if (r.ok) showToast('✓ 已同步至 Google Sheets（' + date + '）');
+    else showToast('⚠ Sheets 回應異常：' + (r.error || '未知錯誤'));
+  }).catch(function() {
     showToast('⚠ 本機已儲存，但 Google Sheets 同步失敗，請檢查網路');
   });
 }
@@ -2476,22 +2535,44 @@ function drawWeatherChart(data) {
 function drawWorkerChart(data) {
   const container = document.getElementById('worker-bar-chart');
   if (!data.length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">尚無資料</p>'; return; }
-  // Aggregate qty by laborUnit across all reports
+
+  // 先嘗試從 workerData 彙整（laborUnit 空白時歸入「未填工班」）
   const totalsMap = {};
+  var hasWorkerData = false;
   data.forEach(function(r) {
-    if (!Array.isArray(r.workerData)) return;
+    if (!Array.isArray(r.workerData) || !r.workerData.length) return;
     r.workerData.forEach(function(w) {
-      if (!w.laborUnit) return;
-      totalsMap[w.laborUnit] = (totalsMap[w.laborUnit] || 0) + (parseInt(w.qty) || 0);
+      var qty = parseInt(w.qty) || 0;
+      if (qty === 0 && !w.laborUnit) return;
+      hasWorkerData = true;
+      var key = w.laborUnit || '（未填工班）';
+      totalsMap[key] = (totalsMap[key] || 0) + qty;
     });
   });
+
+  // fallback：若 workerData 皆空，但 totalWorkers 有值，顯示合計列
+  if (!hasWorkerData) {
+    var grandTotal = data.reduce(function(s,r){ return s + (r.totalWorkers||0); }, 0);
+    if (grandTotal > 0) {
+      container.innerHTML =
+        '<div class="mini-chart-bar-row">' +
+        '<span class="mini-chart-label" style="width:100px;text-align:right;white-space:nowrap;color:var(--muted);">合計人次</span>' +
+        '<div class="mini-bar-wrap"><div class="mini-bar" style="width:100%"></div></div>' +
+        '<span class="mini-bar-val">' + grandTotal + '</span>' +
+        '</div>' +
+        '<p style="color:var(--muted);font-size:11px;padding:4px 12px 12px;">（工班細項需在日報填寫勞務單位後重新儲存）</p>';
+    } else {
+      container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">尚無工班出勤資料</p>';
+    }
+    return;
+  }
+
   const labels = Object.keys(totalsMap);
-  if (!labels.length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">尚無工班資料</p>'; return; }
   const totals = labels.map(function(l) { return totalsMap[l]; });
   const max = Math.max.apply(null, totals.concat([1]));
   container.innerHTML = labels.map(function(l, i) {
     return '<div class="mini-chart-bar-row">' +
-      '<span class="mini-chart-label" style="width:80px;text-align:right;white-space:nowrap;">' + l + '</span>' +
+      '<span class="mini-chart-label" style="width:100px;text-align:right;white-space:nowrap;">' + l + '</span>' +
       '<div class="mini-bar-wrap"><div class="mini-bar" style="width:' + (totals[i]/max*100) + '%"></div></div>' +
       '<span class="mini-bar-val">' + totals[i] + '</span>' +
       '</div>';
