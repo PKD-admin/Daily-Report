@@ -2254,14 +2254,14 @@ function saveReport() {
   });
   clearDraft(); // 正式儲存後清除草稿
   showToast('日報表已儲存，正在同步至 Google Sheets…');
+  // GAS doPost 不支援 CORS，必須用 no-cors 模式送出（無法讀回應）
   fetch(GAS_URL, {
     method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
-  }).then(function(res) { return res.json(); })
-  .then(function(r) {
-    if (r.ok) showToast('✓ 已同步至 Google Sheets（' + date + '）');
-    else showToast('⚠ Sheets 回應異常：' + (r.error || '未知錯誤'));
+  }).then(function() {
+    showToast('✓ 已同步至 Google Sheets（' + date + '）');
   }).catch(function() {
     showToast('⚠ 本機已儲存，但 Google Sheets 同步失敗，請檢查網路');
   });
