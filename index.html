@@ -219,6 +219,9 @@
     .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 768px) {
+    /* ── 全域字體放大，對長者友善 ── */
+    body { font-size: 17px; }
+
     /* sidebar 改成固定在底部的導覽列 */
     #sidebar {
       position: fixed;
@@ -246,31 +249,33 @@
     .nav-section-label { display: none; }
     .nav-btn {
       flex-direction: column;
-      gap: 2px;
-      padding: 8px 4px;
-      font-size: 10px;
+      gap: 3px;
+      padding: 10px 4px;
+      font-size: 11px;
       flex: 1;
-      min-width: 52px;
+      min-width: 56px;
       border-radius: 0;
       justify-content: center;
       align-items: center;
       white-space: nowrap;
     }
-    .nav-btn .icon { font-size: 20px; width: auto; }
+    .nav-btn .icon { font-size: 24px; width: auto; }
 
     /* main 內容區底部留空間給導覽列 */
-    #main { margin-bottom: 64px; }
+    #main { margin-bottom: 72px; }
 
-    /* topbar 簡化 */
-    .topbar { padding: 0 14px; height: 50px; }
+    /* topbar */
+    .topbar { padding: 0 14px; height: 56px; }
+    .topbar-title { font-size: 16px; }
     .desktop-only { display: none !important; }
 
-    /* content 內邊距縮小 */
+    /* content 內邊距 */
     .content { padding: 14px; }
 
-    /* card header 可換行 */
-    .card-header { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
-    .card-body { padding: 14px; }
+    /* card */
+    .card-header { flex-wrap: wrap; gap: 8px; padding: 14px 16px; }
+    .card-header h2 { font-size: 17px; }
+    .card-body { padding: 16px; }
 
     /* grid 全部單欄 */
     .grid-2, .grid-3, .grid-4, .month-stat-grid { grid-template-columns: 1fr; }
@@ -281,11 +286,65 @@
     /* 工班、進度列的 grid 調整 */
     .worker-row { grid-template-columns: 1fr 1fr !important; }
 
-    /* KPI 卡片字體縮小 */
-    .kpi-card .kpi-value { font-size: 22px; }
+    /* KPI 卡片 */
+    .kpi-card .kpi-value { font-size: 26px; }
+    .kpi-card .kpi-label { font-size: 14px; }
 
-    /* topbar 儲存按鈕文字縮短 */
-    .btn-primary { font-size: 12px; padding: 6px 10px; }
+    /* ── 表單元素放大 ── */
+    .field label {
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+    input[type="text"], input[type="number"], input[type="date"],
+    textarea, select {
+      font-size: 16px;      /* 16px 避免 iOS 自動縮放 */
+      padding: 12px 14px;
+      border-radius: 8px;
+      min-height: 48px;     /* 觸控目標至少 48px */
+    }
+    select {
+      min-height: 48px;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    textarea { min-height: 90px; }
+
+    /* ── 按鈕放大 ── */
+    .btn { font-size: 15px; padding: 10px 16px; min-height: 44px; }
+    .btn-primary { font-size: 16px; padding: 10px 18px; min-height: 48px; }
+    .btn-sm { font-size: 14px; padding: 8px 14px; min-height: 40px; }
+    .btn-xs { font-size: 13px; padding: 7px 12px; min-height: 38px; }
+
+    /* ── 天氣按鈕放大 ── */
+    .weather-btn { font-size: 16px; padding: 12px 18px; min-height: 48px; }
+
+    /* ── 工班列 ── */
+    .worker-row select,
+    .worker-row input { font-size: 16px; min-height: 48px; }
+    .worker-row .btn-xs { min-height: 44px; width: 44px; }
+
+    /* ── 進度列 ── */
+    .progress-row select,
+    .progress-row input { font-size: 16px; min-height: 48px; }
+
+    /* ── 表格文字放大 ── */
+    table { font-size: 15px; }
+    th { font-size: 13px; padding: 10px 10px; }
+    td { padding: 10px 10px; }
+
+    /* ── section 標題 ── */
+    .section-title { font-size: 18px; }
+
+    /* ── checkbox / radio 放大 ── */
+    input[type="checkbox"], input[type="radio"] {
+      width: 22px; height: 22px;
+    }
+
+    /* ── 新增按鈕加大 ── */
+    [id^="add-"], [id^="btn-add"] { min-height: 44px; font-size: 15px; }
+
+    /* topbar 儲存按鈕 */
+    #btn-save-report { font-size: 15px; padding: 10px 16px; }
   }
 
   /* ── Form ── */
