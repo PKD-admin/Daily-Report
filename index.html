@@ -22,13 +22,13 @@
   }
 
   body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     display: flex;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 16px;
+    line-height: 1.6;
   }
 
   /* ── Sidebar ── */
@@ -201,8 +201,8 @@
     gap: 12px;
   }
   .card-title {
-    font-size: 13.5px;
-    font-weight: 700;
+    font-size: 17px;
+    font-weight: 800;
     color: var(--navy);
     display: flex;
     align-items: center;
@@ -565,6 +565,7 @@
       <span class="page-tag" id="topbar-tag">今日</span>
     </div>
     <div class="topbar-actions">
+      <span id="draft-status" style="font-size:12px;color:var(--muted);white-space:nowrap;"></span>
       <button class="btn btn-ghost" onclick="clearForm()">🗑 清除</button>
       <button class="btn btn-ghost" onclick="window.print()">🖨 列印</button>
       <button class="btn btn-primary" onclick="saveReport()">💾 儲存日報表</button>
@@ -797,53 +798,30 @@
           <div class="card-title"><span class="icon">🔍</span> 品質查驗與缺失記錄</div>
         </div>
         <div class="card-body">
-          <!-- 今日查驗 -->
-          <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">今日查驗</div>
-          <div class="grid-2">
-            <div class="field">
-              <label>查驗項目</label>
-              <select id="f-inspect-item">
-                <option value="">請選擇查驗項目</option>
-                <optgroup label="直橫料系統">
-                  <option>立柱垂直度</option>
-                  <option>橫料水平度</option>
-                  <option>玻璃裝配尺寸</option>
-                  <option>矽利康填縫</option>
-                  <option>結構矽利康黏著</option>
-                  <option>壓條鎖固</option>
-                </optgroup>
-                <optgroup label="單元式系統">
-                  <option>單元板組裝精度</option>
-                  <option>吊掛件固定</option>
-                  <option>單元板對接縫隙</option>
-                  <option>連接鋁件</option>
-                  <option>水槽試水</option>
-                </optgroup>
-                <optgroup label="通用">
-                  <option>外牆試水</option>
-                  <option>外觀檢查</option>
-                  <option>清潔與保護</option>
-                  <option>安全防護</option>
-                </optgroup>
-              </select>
-            </div>
-            <div class="field">
-              <label>查驗結果</label>
-              <select id="f-inspect-result">
-                <option value="合格">✅ 合格</option>
-                <option value="待改善">⚠️ 待改善</option>
-                <option value="不合格">❌ 不合格</option>
-                <option value="待觀察">👁 待觀察</option>
-              </select>
-            </div>
+          <!-- 查驗清單 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">查驗清單</span>
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="addInspectRow()">+ 新增查驗</button>
           </div>
-          <div class="field" style="margin-top:12px;">
-            <label>查驗備註</label>
-            <textarea id="f-inspect-note" placeholder="查驗說明、量測值或特殊情況…" style="min-height:56px;"></textarea>
+          <div class="table-wrap">
+            <table class="defect-table" id="inspect-table">
+              <thead>
+                <tr>
+                  <th style="width:36px;">#</th>
+                  <th>查驗項目</th>
+                  <th style="width:120px;">查驗結果</th>
+                  <th>備註</th>
+                  <th style="width:36px;"></th>
+                </tr>
+              </thead>
+              <tbody id="inspect-tbody">
+                <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無查驗記錄，點擊「+ 新增查驗」</td></tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- 缺失清單 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px;margin-bottom:10px;">
             <span style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">缺失清單</span>
             <button class="btn btn-ghost" style="font-size:12px;" onclick="addDefectRow()">+ 新增缺失</button>
           </div>
@@ -853,11 +831,11 @@
                 <tr>
                   <th style="width:36px;">#</th>
                   <th>缺失描述</th>
-                  <th style="width:140px;">缺失類別</th>
-                  <th style="width:90px;">棟別</th>
-                  <th style="width:80px;">區域</th>
-                  <th style="width:90px;">樓層</th>
-                  <th style="width:110px;">狀態</th>
+                  <th style="width:130px;">缺失類別</th>
+                  <th style="width:80px;">棟別</th>
+                  <th style="width:70px;">區域</th>
+                  <th style="width:80px;">樓層</th>
+                  <th style="width:100px;">狀態</th>
                   <th style="width:36px;"></th>
                 </tr>
               </thead>
@@ -986,16 +964,10 @@
         </div>
       </div>
 
-      <!-- 工班出勤 + 天氣 -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header"><div class="card-title"><span class="icon">👷</span> 工班出勤（人次/日）</div></div>
-          <div class="card-body" id="worker-bar-chart"><!-- JS --></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title"><span class="icon">🌤</span> 天氣分布（本月）</div></div>
-          <div class="card-body"><div class="chart-wrap"><canvas id="chart-weather" height="180"></canvas></div></div>
-        </div>
+      <!-- 工班出勤 -->
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="icon">👷</span> 工班出勤（人次/日）</div></div>
+        <div class="card-body" id="worker-bar-chart"><!-- JS --></div>
       </div>
 
       <!-- 缺失統計 -->
@@ -1025,6 +997,25 @@
 
     <!-- ════ 設定 ════ -->
     <div class="view" id="view-settings">
+
+      <!-- 密碼驗證遮罩 -->
+      <div id="settings-lock" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;">
+        <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:40px 48px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+          <div style="font-size:40px;margin-bottom:16px;">🔒</div>
+          <div style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:8px;">專案設定</div>
+          <div style="font-size:14px;color:var(--muted);margin-bottom:28px;">請輸入管理員密碼以存取設定</div>
+          <input type="password" id="settings-pwd-input" placeholder="請輸入密碼" style="text-align:center;font-size:16px;letter-spacing:0.1em;margin-bottom:12px;" onkeydown="if(event.key==='Enter')verifySettingsPassword()">
+          <div id="settings-pwd-error" style="color:var(--danger);font-size:13px;margin-bottom:12px;display:none;">密碼錯誤，請重試</div>
+          <button class="btn btn-primary" style="width:100%;font-size:15px;padding:10px;" onclick="verifySettingsPassword()">確認</button>
+        </div>
+      </div>
+
+      <!-- 設定內容（密碼正確後顯示） -->
+      <div id="settings-content" style="display:none;">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+        <button class="btn btn-ghost" style="font-size:13px;" onclick="lockSettings()">🔒 鎖定設定</button>
+      </div>
+
       <!-- 工程名稱管理 -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><div class="card-title"><span class="icon">🏗</span> 工程名稱管理</div></div>
@@ -1221,7 +1212,9 @@
           </div>
         </div>
       </div>
-    </div>
+
+      </div><!-- /settings-content -->
+    </div><!-- /view-settings -->
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -1333,11 +1326,141 @@ let sysType = 'stick';
   document.getElementById('cfg-unit').value = settings.contractQty || (totalAll > 0 ? totalAll : '');
   updateProgress();
 
-  addProgressRow();
-  addMaterialRow();
-  addWorkerRow();
-  addEquipmentRow();
+  // 嘗試還原未儲存草稿
+  const savedDraft = localStorage.getItem('cwDraft');
+  if (savedDraft) {
+    try {
+      const draft = JSON.parse(savedDraft);
+      // 只有草稿日期與今天相同才還原，避免把昨天的草稿帶入
+      if (draft.date === today) {
+        restoreDraft(draft);
+      } else {
+        // 草稿日期不同，仍加預設空列
+        addProgressRow();
+        addMaterialRow();
+        addWorkerRow();
+        addEquipmentRow();
+      }
+    } catch(e) {
+      addProgressRow();
+      addMaterialRow();
+      addWorkerRow();
+      addEquipmentRow();
+    }
+  } else {
+    addProgressRow();
+    addMaterialRow();
+    addWorkerRow();
+    addEquipmentRow();
+  }
+
+  startDraftTimer();
 })();
+
+// ════════════════ Auto Draft ════════════════
+let draftTimer = null;
+
+function collectDraft() {
+  const draft = {
+    date:          document.getElementById('f-date').value,
+    project:       document.getElementById('f-project').value,
+    owner:         document.getElementById('f-owner').value,
+    contractor:    document.getElementById('f-contractor').value,
+    siteManager:   document.getElementById('f-site-manager').value,
+    reporter:      document.getElementById('f-reporter').value,
+    reportNo:      document.getElementById('f-report-no').value,
+    weatherImpact: document.getElementById('f-weather-impact').value,
+    tomorrowPlan:  document.getElementById('f-tomorrow-plan').value,
+    issues:        document.getElementById('f-issues').value,
+    remark:        document.getElementById('f-remark').value,
+    weather: (document.querySelector('input[name="weather"]:checked') || {}).value || '',
+    progressRows: progressRows.map(r => {
+      const b = document.getElementById('prog-block-'+r.id);
+      const d = document.getElementById('prog-dir-'+r.id);
+      const f = document.getElementById('prog-floor-'+r.id);
+      const s = document.getElementById('prog-sys-'+r.id);
+      const p = document.getElementById('prog-panel-'+r.id);
+      const q = document.getElementById('prog-qty-'+r.id);
+      if (!b) return null;
+      return {block:b.value,dir:d.value,floor:f.value,sys:s.value,panelType:p.value,qty:q.value};
+    }).filter(Boolean),
+    workerRows: workerRows.map(id => {
+      const u = document.getElementById('wr-labor-'+id);
+      const c = document.getElementById('wr-qty-'+id);
+      const t = document.getElementById('wr-type-'+id);
+      const d = document.getElementById('wr-dir-'+id);
+      const f = document.getElementById('wr-floor-'+id);
+      if (!u) return null;
+      return {laborUnit:u.value, qty:c.value, type:t.value, dir:d.value, floor:f.value};
+    }).filter(Boolean),
+    materialRows: materialRows.map(r => {
+      const t = document.getElementById('mat-type-'+r.id);
+      const q = document.getElementById('mat-qty-'+r.id);
+      const rc = document.getElementById('mat-receiver-'+r.id);
+      const l = document.getElementById('mat-location-'+r.id);
+      const n = document.getElementById('mat-next-'+r.id);
+      if (!t) return null;
+      return {type:t.value,qty:q.value,receiver:rc.value,location:l.value,nextDate:n.value};
+    }).filter(Boolean),
+    savedAt: new Date().toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}),
+  };
+  return draft;
+}
+
+function saveDraft() {
+  const draft = collectDraft();
+  localStorage.setItem('cwDraft', JSON.stringify(draft));
+  const el = document.getElementById('draft-status');
+  if (el) el.textContent = '草稿已自動儲存 ' + draft.savedAt;
+}
+
+function restoreDraft(draft) {
+  if (!draft) return;
+  if (draft.date) { document.getElementById('f-date').value = draft.date; updateWeekday(); }
+  if (draft.project) { const s = document.getElementById('f-project'); if ([...s.options].some(o=>o.value===draft.project)) s.value=draft.project; }
+  if (draft.owner) document.getElementById('f-owner').value = draft.owner;
+  if (draft.contractor) { const s = document.getElementById('f-contractor'); if ([...s.options].some(o=>o.value===draft.contractor)) s.value=draft.contractor; }
+  if (draft.siteManager) { const s = document.getElementById('f-site-manager'); if ([...s.options].some(o=>o.value===draft.siteManager)) s.value=draft.siteManager; }
+  if (draft.reporter) { const s = document.getElementById('f-reporter'); if ([...s.options].some(o=>o.value===draft.reporter)) s.value=draft.reporter; }
+  if (draft.reportNo) document.getElementById('f-report-no').value = draft.reportNo;
+  if (draft.weather) { const w = document.querySelector(`input[name="weather"][value="${draft.weather}"]`); if(w) w.checked=true; }
+  if (draft.weatherImpact) document.getElementById('f-weather-impact').value = draft.weatherImpact;
+  if (draft.tomorrowPlan) document.getElementById('f-tomorrow-plan').value = draft.tomorrowPlan;
+  if (draft.issues) document.getElementById('f-issues').value = draft.issues;
+  if (draft.remark) document.getElementById('f-remark').value = draft.remark;
+
+  // 施工進度
+  if (draft.progressRows && draft.progressRows.length) {
+    document.getElementById('progress-rows').innerHTML = '';
+    progressRows = [];
+    draft.progressRows.forEach(r => addProgressRow(r.block, r.dir, r.floor, r.sys, r.panelType, r.qty));
+  }
+  // 工班
+  if (draft.workerRows && draft.workerRows.length) {
+    loadWorkerRows(draft.workerRows);
+  }
+  // 材料
+  if (draft.materialRows && draft.materialRows.length) {
+    document.getElementById('material-rows').innerHTML = '';
+    materialRows = [];
+    draft.materialRows.forEach(r => addMaterialRow(r.type, r.qty, r.receiver, r.location, r.nextDate));
+  }
+
+  updateProgress();
+  const el = document.getElementById('draft-status');
+  if (el && draft.savedAt) el.textContent = '已還原草稿（' + draft.savedAt + '）';
+}
+
+function startDraftTimer() {
+  if (draftTimer) clearInterval(draftTimer);
+  draftTimer = setInterval(saveDraft, 30000); // 每 30 秒自動儲存
+}
+
+function clearDraft() {
+  localStorage.removeItem('cwDraft');
+  const el = document.getElementById('draft-status');
+  if (el) el.textContent = '';
+}
 
 // ════════════════ Nav ════════════════
 function showView(name) {
@@ -1351,6 +1474,7 @@ function showView(name) {
   document.getElementById('topbar-tag').textContent = tags[name];
   if (name === 'history') renderHistory();
   if (name === 'monthly') renderMonthly();
+  if (name === 'settings' && !settingsUnlocked) lockSettings();
 }
 
 
@@ -1510,70 +1634,212 @@ function removeMaterialRow(idx) {
   if (el) el.remove();
 }
 
+// ════════════════ Inspections ════════════════
+let inspections = [];
+let inspectSeq  = 0;
+const INSPECT_ITEMS_HTML =
+  '<optgroup label="直橫料系統">' +
+    '<option>立柱垂直度</option><option>橫料水平度</option><option>玻璃裝配尺寸</option>' +
+    '<option>矽利康填縫</option><option>結構矽利康黏著</option><option>壓條鎖固</option>' +
+  '</optgroup>' +
+  '<optgroup label="單元式系統">' +
+    '<option>單元板組裝精度</option><option>吊掛件固定</option><option>單元板對接縫隙</option>' +
+    '<option>連接鋁件</option><option>水槽試水</option>' +
+  '</optgroup>' +
+  '<optgroup label="通用">' +
+    '<option>外牆試水</option><option>外觀檢查</option><option>清潔與保護</option><option>安全防護</option>' +
+  '</optgroup>';
+
+function addInspectRow(item, result, note) {
+  inspectSeq++;
+  const seq = inspectSeq;
+  const obj = { seq, item: item||'', result: result||'合格', note: note||'' };
+  inspections.push(obj);
+
+  const tbody = document.getElementById('inspect-tbody');
+  if (!tbody) return;
+  if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+
+  const tr = document.createElement('tr');
+  tr.dataset.seq = seq;
+
+  const numTd = document.createElement('td');
+  numTd.className = 'ins-num';
+  numTd.style.cssText = 'font-variant-numeric:tabular-nums;color:var(--muted);';
+  numTd.textContent = String(inspections.length).padStart(2,'0');
+
+  const itemTd = document.createElement('td');
+  const itemSel = document.createElement('select');
+  itemSel.style.cssText = 'border:none;background:transparent;font-size:13px;width:100%;';
+  itemSel.innerHTML = '<option value="">請選擇查驗項目</option>' + INSPECT_ITEMS_HTML;
+  itemSel.value = obj.item;
+  itemSel.addEventListener('change', function() { obj.item = this.value; });
+  itemTd.appendChild(itemSel);
+
+  const resultTd = document.createElement('td');
+  const resultSel = document.createElement('select');
+  resultSel.style.cssText = 'border:none;background:transparent;font-size:12px;width:100%;';
+  resultSel.innerHTML = '<option>合格</option><option>待改善</option><option>不合格</option><option>待觀察</option>';
+  resultSel.value = obj.result;
+  resultSel.addEventListener('change', function() { obj.result = this.value; });
+  resultTd.appendChild(resultSel);
+
+  const noteTd = document.createElement('td');
+  const noteInput = document.createElement('input');
+  noteInput.type = 'text';
+  noteInput.placeholder = '備註…';
+  noteInput.value = obj.note;
+  noteInput.style.cssText = 'border:none;background:transparent;width:100%;font-size:12px;padding:0;';
+  noteInput.addEventListener('input', function() { obj.note = this.value; });
+  noteTd.appendChild(noteInput);
+
+  const delTd = document.createElement('td');
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn btn-ghost';
+  delBtn.style.cssText = 'padding:4px 8px;font-size:11px;';
+  delBtn.textContent = '✕';
+  delBtn.addEventListener('click', function() { removeInspect(seq); });
+  delTd.appendChild(delBtn);
+
+  tr.appendChild(numTd);
+  tr.appendChild(itemTd);
+  tr.appendChild(resultTd);
+  tr.appendChild(noteTd);
+  tr.appendChild(delTd);
+  tbody.appendChild(tr);
+}
+
+function removeInspect(seq) {
+  inspections = inspections.filter(x => x.seq !== seq);
+  const tbody = document.getElementById('inspect-tbody');
+  if (!tbody) return;
+  const tr = tbody.querySelector('tr[data-seq="'+seq+'"]');
+  if (tr) tr.remove();
+  tbody.querySelectorAll('tr[data-seq]').forEach((row, i) => {
+    const num = row.querySelector('.ins-num');
+    if (num) num.textContent = String(i+1).padStart(2,'0');
+  });
+  if (!inspections.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無查驗記錄，點擊「+ 新增查驗」</td></tr>';
+  }
+}
+
+function renderInspectTable() {
+  inspections = [];
+  inspectSeq  = 0;
+  const tbody = document.getElementById('inspect-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無查驗記錄，點擊「+ 新增查驗」</td></tr>';
+}
+
 // ════════════════ Defects ════════════════
 let defectSeq = 0;
-function addDefectRow() {
+
+function addDefectRow(desc, cat, block, dir, floor, status) {
   defectSeq++;
   const seq = defectSeq;
-  defects.push({seq});
-  renderDefectTable();
+  const obj = { seq, desc: desc||'', cat: cat||'尺寸偏差', block: block||'', dir: dir||'', floor: floor||'', status: status||'待改善' };
+  defects.push(obj);
+
+  const tbody = document.getElementById('defect-tbody');
+  if (!tbody) return;
+  if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+
+  const tr = document.createElement('tr');
+  tr.dataset.seq = seq;
+
+  const numTd = document.createElement('td');
+  numTd.className = 'def-num';
+  numTd.style.cssText = 'font-variant-numeric:tabular-nums;color:var(--muted);';
+  numTd.textContent = String(defects.length).padStart(2,'0');
+
+  const descTd = document.createElement('td');
+  const descInput = document.createElement('input');
+  descInput.type = 'text';
+  descInput.placeholder = '缺失描述…';
+  descInput.value = obj.desc;
+  descInput.style.cssText = 'border:none;background:transparent;width:100%;font-size:13px;padding:0;';
+  descInput.addEventListener('input', function() { obj.desc = this.value; });
+  descTd.appendChild(descInput);
+
+  const catTd = document.createElement('td');
+  const catSel = document.createElement('select');
+  catSel.style.cssText = 'border:none;background:transparent;font-size:12px;width:100%;';
+  catSel.innerHTML = '<option>尺寸偏差</option><option>外觀損傷</option><option>安裝錯誤</option><option>防水問題</option><option>其他</option>';
+  catSel.value = obj.cat;
+  catSel.addEventListener('change', function() { obj.cat = this.value; });
+  catTd.appendChild(catSel);
+
+  const blockTd = document.createElement('td');
+  const blockSel = document.createElement('select');
+  blockSel.style.cssText = 'border:none;background:transparent;font-size:12px;width:100%;';
+  let blockHtml = '<option value="">棟別</option>';
+  (settings.blocks||[]).forEach(b => { blockHtml += '<option'+(b===obj.block?' selected':'')+'>'+b+'</option>'; });
+  blockSel.innerHTML = blockHtml;
+  blockSel.addEventListener('change', function() { obj.block = this.value; });
+  blockTd.appendChild(blockSel);
+
+  const dirTd = document.createElement('td');
+  const dirSel = document.createElement('select');
+  dirSel.style.cssText = 'border:none;background:transparent;font-size:12px;width:100%;';
+  let dirHtml = '<option value="">區域</option>';
+  DIRECTIONS.forEach(d => { dirHtml += '<option'+(d===obj.dir?' selected':'')+'>'+d+'</option>'; });
+  dirSel.innerHTML = dirHtml;
+  dirSel.addEventListener('change', function() { obj.dir = this.value; });
+  dirTd.appendChild(dirSel);
+
+  const floorTd = document.createElement('td');
+  const floorSel = document.createElement('select');
+  floorSel.style.cssText = 'border:none;background:transparent;font-size:12px;width:100%;';
+  let floorHtml = '<option value="">樓層</option>';
+  (settings.floors||[]).forEach(f => { floorHtml += '<option'+(f===obj.floor?' selected':'')+'>'+f+'</option>'; });
+  floorSel.innerHTML = floorHtml;
+  floorSel.addEventListener('change', function() { obj.floor = this.value; });
+  floorTd.appendChild(floorSel);
+
+  const statusTd = document.createElement('td');
+  const statusSel = document.createElement('select');
+  statusSel.style.cssText = 'border:none;background:transparent;font-size:12px;width:100%;';
+  statusSel.innerHTML = '<option>待改善</option><option>改善中</option><option>已改善</option>';
+  statusSel.value = obj.status;
+  statusSel.addEventListener('change', function() { obj.status = this.value; });
+  statusTd.appendChild(statusSel);
+
+  const delTd = document.createElement('td');
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn btn-ghost';
+  delBtn.style.cssText = 'padding:4px 8px;font-size:11px;';
+  delBtn.textContent = '✕';
+  delBtn.addEventListener('click', function() { removeDefect(seq); });
+  delTd.appendChild(delBtn);
+
+  tr.appendChild(numTd); tr.appendChild(descTd); tr.appendChild(catTd);
+  tr.appendChild(blockTd); tr.appendChild(dirTd); tr.appendChild(floorTd);
+  tr.appendChild(statusTd); tr.appendChild(delTd);
+  tbody.appendChild(tr);
 }
+
 function removeDefect(seq) {
   defects = defects.filter(d => d.seq !== seq);
-  renderDefectTable();
-}
-function renderDefectTable() {
   const tbody = document.getElementById('defect-tbody');
+  if (!tbody) return;
+  const tr = tbody.querySelector('tr[data-seq="'+seq+'"]');
+  if (tr) tr.remove();
+  tbody.querySelectorAll('tr[data-seq]').forEach((row, i) => {
+    const num = row.querySelector('.def-num');
+    if (num) num.textContent = String(i+1).padStart(2,'0');
+  });
   if (!defects.length) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無缺失記錄，點擊「+ 新增缺失」</td></tr>';
-    return;
   }
-  const sel = (opts, val, ph) => `<option value="">${ph}</option>` + opts.map(o => `<option${o===val?' selected':''}>${o}</option>`).join('');
-  tbody.innerHTML = defects.map((d,i) => `
-    <tr>
-      <td style="font-variant-numeric:tabular-nums;color:var(--muted);">${String(d.seq).padStart(2,'0')}</td>
-      <td><input type="text" value="${d.desc||''}" placeholder="缺失描述…" style="border:none;background:transparent;width:100%;font-size:13px;padding:0;" onchange="defects[${i}].desc=this.value"></td>
-      <td>
-        <select style="border:none;background:transparent;font-size:12px;width:100%;" onchange="defects[${i}].cat=this.value">
-          <option ${d.cat==='尺寸偏差'?'selected':''}>尺寸偏差</option>
-          <option ${d.cat==='外觀損傷'?'selected':''}>外觀損傷</option>
-          <option ${d.cat==='安裝錯誤'?'selected':''}>安裝錯誤</option>
-          <option ${d.cat==='防水問題'?'selected':''}>防水問題</option>
-          <option ${d.cat==='其他'?'selected':''}>其他</option>
-        </select>
-      </td>
-      <td>
-        <select style="border:none;background:transparent;font-size:12px;width:100%;" onchange="defects[${i}].block=this.value">
-          ${sel(settings.blocks||[], d.block||'', '棟別')}
-        </select>
-      </td>
-      <td>
-        <select style="border:none;background:transparent;font-size:12px;width:100%;" onchange="defects[${i}].dir=this.value">
-          ${sel(DIRECTIONS, d.dir||'', '區域')}
-        </select>
-      </td>
-      <td>
-        <select style="border:none;background:transparent;font-size:12px;width:100%;" onchange="defects[${i}].floor=this.value">
-          ${sel(settings.floors||[], d.floor||'', '樓層')}
-        </select>
-      </td>
-      <td>
-        <select style="border:none;background:transparent;font-size:12px;width:100%;" onchange="defects[${i}].status=this.value">
-          <option ${d.status==='待改善'?'selected':''}>待改善</option>
-          <option ${d.status==='改善中'?'selected':''}>改善中</option>
-          <option ${d.status==='已改善'?'selected':''}>已改善</option>
-        </select>
-      </td>
-      <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="removeDefect(${d.seq})">✕</button></td>
-    </tr>
-  `).join('');
 }
-function switchQTab(name) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', (i===0 && name==='inspect') || (i===1 && name==='defect'));
-  });
-  document.getElementById('qtab-inspect').classList.toggle('active', name==='inspect');
-  document.getElementById('qtab-defect').classList.toggle('active', name==='defect');
+
+function renderDefectTable() {
+  defects = [];
+  defectSeq = 0;
+  const tbody = document.getElementById('defect-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無缺失記錄，點擊「+ 新增缺失」</td></tr>';
 }
 
 // ════════════════ Progress ════════════════
@@ -1748,9 +2014,7 @@ function saveReport() {
     equipment: getEquipmentData(),
     materials: mats,
     materialNote: document.getElementById('f-material-note').value,
-    inspectItem: document.getElementById('f-inspect-item').value,
-    inspectResult: document.getElementById('f-inspect-result').value,
-    inspectNote: document.getElementById('f-inspect-note').value,
+    inspections: JSON.parse(JSON.stringify(inspections)),
     defects: JSON.parse(JSON.stringify(defects)),
     issues: document.getElementById('f-issues').value,
     safety: document.getElementById('f-safety').value,
@@ -1772,6 +2036,7 @@ function saveReport() {
     cumUnit:  parseFloat(document.getElementById('f-cum-unit').value)  || 0,
     cumStick: parseFloat(document.getElementById('f-cum-stick').value) || 0,
   });
+  clearDraft(); // 正式儲存後清除草稿
   showToast('日報表已儲存，正在同步至 Google Sheets…');
   fetch(GAS_URL, {
     method: 'POST',
@@ -1867,8 +2132,12 @@ function loadReport(date) {
   document.getElementById('f-issues').value = r.issues || '';
   document.getElementById('f-safety').value = r.safety || '';
   document.getElementById('f-remark').value = r.remark || '';
-  defects = JSON.parse(JSON.stringify(r.defects || []));
+  // 還原查驗清單
+  renderInspectTable();
+  (r.inspections || []).forEach(x => addInspectRow(x.item, x.result, x.note));
+  // 還原缺失清單
   renderDefectTable();
+  (r.defects || []).forEach(x => addDefectRow(x.desc, x.cat, x.block, x.dir, x.floor, x.status));
   showView('daily');
   showToast('已載入 ' + date + ' 日報表');
 }
@@ -2595,6 +2864,32 @@ function resetFloors() {
   showToast('已重設為 1F~22F');
 }
 
+// ════════════════ Settings Password ════════════════
+const SETTINGS_PASSWORD = 'pkd2026';
+let settingsUnlocked = false;
+
+function verifySettingsPassword() {
+  const input = document.getElementById('settings-pwd-input').value;
+  const errEl = document.getElementById('settings-pwd-error');
+  if (input === SETTINGS_PASSWORD) {
+    settingsUnlocked = true;
+    document.getElementById('settings-lock').style.display = 'none';
+    document.getElementById('settings-content').style.display = 'block';
+    document.getElementById('settings-pwd-input').value = '';
+    errEl.style.display = 'none';
+  } else {
+    errEl.style.display = 'block';
+    document.getElementById('settings-pwd-input').value = '';
+    document.getElementById('settings-pwd-input').focus();
+  }
+}
+
+function lockSettings() {
+  settingsUnlocked = false;
+  document.getElementById('settings-lock').style.display = 'flex';
+  document.getElementById('settings-content').style.display = 'none';
+}
+
 // ════════════════ Settings ════════════════
 function syncContractTotal() {
   const u = parseFloat(document.getElementById('cfg-qty-unit').value)  || 0;
@@ -2654,12 +2949,13 @@ function clearForm() {
   materialRows = []; addMaterialRow();
   document.getElementById('f-tomorrow-plan').value = '';
   loadEquipmentRows([]);
-  document.getElementById('f-inspect-note').value = '';
+  renderInspectTable();
   document.getElementById('f-issues').value = '';
   document.getElementById('f-safety').value = '';
   document.getElementById('f-remark').value = '';
-  defects = []; renderDefectTable();
+  renderDefectTable();
   updateProgress();
+  clearDraft(); // 手動清除時也清掉草稿
   showToast('表單已清除');
 }
 
