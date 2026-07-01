@@ -248,10 +248,19 @@
 
     /* ── Main ── */
     #main { margin-bottom: 76px; }
-    .topbar { padding: 0 14px; height: 60px; }
-    .topbar-title { font-size: 17px; font-weight: 700; }
+    .topbar { padding: 0 12px; height: 56px; gap: 8px; overflow: hidden; }
+    .topbar-title {
+      font-size: 15px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex-shrink: 1; min-width: 0;
+    }
+    .topbar-title .page-tag { display: none; }
+    #draft-status { display: none !important; }
     .desktop-only { display: none !important; }
     .content { padding: 12px; gap: 12px; }
+
+    /* ── 欄位標頭隱藏（卡片式不需要） ── */
+    .col-header-row { display: none !important; }
 
     /* ── Card ── */
     .card { border-radius: 12px; margin-bottom: 12px; }
@@ -331,69 +340,40 @@
     .kpi-card .kpi-value { font-size: 30px; }
     .kpi-card .kpi-label { font-size: 15px; }
 
-    /* ── 工班列改為卡片式 ── */
-    .worker-row {
+    /* ── 動態列卡片式（強制覆蓋 inline style grid） ── */
+    .worker-row, .progress-row, .equipment-row, .material-row {
       display: flex !important;
       flex-direction: column !important;
       gap: 10px !important;
-      background: var(--bg);
+      grid-template-columns: unset !important;
+      background: var(--surface);
       border: 2px solid var(--border);
       border-radius: 12px;
       padding: 14px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      width: 100%;
+      box-sizing: border-box;
     }
-    .worker-row > * { width: 100% !important; }
-    .worker-row select, .worker-row input { min-height: 54px !important; font-size: 18px !important; }
-    /* 刪除按鈕放在右上 */
-    .worker-row .btn-xs {
-      align-self: flex-end;
-      min-width: 46px !important; min-height: 46px !important;
+    .worker-row > *, .progress-row > *,
+    .equipment-row > *, .material-row > * {
+      width: 100% !important;
+      min-width: 0 !important;
     }
-
-    /* ── 施工進度列改為卡片式 ── */
-    .progress-row {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 10px !important;
-      background: var(--bg);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 10px;
+    .worker-row select, .worker-row input,
+    .progress-row select, .progress-row input,
+    .equipment-row select, .equipment-row input,
+    .material-row select, .material-row input {
+      min-height: 54px !important;
+      font-size: 18px !important;
+      width: 100% !important;
     }
-    .progress-row > * { width: 100% !important; }
-    .progress-row select, .progress-row input { min-height: 54px !important; font-size: 18px !important; }
-
-    /* 欄位標頭在手機版隱藏（因為已變為卡片式） */
-    .progress-col-header, .worker-col-header { display: none !important; }
-
-    /* ── 設備列改為卡片式 ── */
-    .equipment-row {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 10px !important;
-      background: var(--bg);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 10px;
+    /* 刪除按鈕靠右縮小 */
+    .worker-row .btn-xs, .progress-row .btn-xs,
+    .equipment-row .btn-xs, .material-row .btn-xs {
+      width: 54px !important;
+      min-width: 54px !important;
+      align-self: flex-end !important;
     }
-    .equipment-row > * { width: 100% !important; }
-    .equipment-row select, .equipment-row input { min-height: 54px !important; font-size: 18px !important; }
-
-    /* ── 材料列改為卡片式 ── */
-    .material-row {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 10px !important;
-      background: var(--bg);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 10px;
-    }
-    .material-row > * { width: 100% !important; }
-    .material-row select, .material-row input { min-height: 54px !important; font-size: 18px !important; }
 
     /* ── 表格 ── */
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -893,7 +873,7 @@
             </div>
           </div>
           <div class="section-sep"></div>
-          <div style="display:grid;grid-template-columns:130px 100px 120px 90px 110px 36px;gap:8px;margin-bottom:4px;">
+          <div class="col-header-row" style="display:grid;grid-template-columns:130px 100px 120px 90px 110px 36px;gap:8px;margin-bottom:4px;">
             <span style="font-size:12px;font-weight:600;color:var(--muted);">勞務單位</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">人力配置</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">工種</span>
@@ -917,7 +897,7 @@
           <button id="btn-add-progress" class="btn btn-ghost" style="font-size:12px;">+ 新增區域</button>
         </div>
         <div class="card-body" id="progress-section-stick">
-          <div style="display:grid;grid-template-columns:70px 70px 80px 100px 170px 110px 36px;gap:8px;margin-bottom:4px;align-items:center;">
+          <div class="col-header-row" style="display:grid;grid-template-columns:70px 70px 80px 100px 170px 110px 36px;gap:8px;margin-bottom:4px;align-items:center;">
             <span style="font-size:12px;font-weight:600;color:var(--muted);">棟別</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">區域</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">樓層</span>
@@ -989,7 +969,7 @@
           <button id="btn-add-equipment" class="btn btn-ghost" style="font-size:12px;">+ 新增設備</button>
         </div>
         <div class="card-body">
-          <div style="display:grid;grid-template-columns:150px 60px 110px 110px 70px 110px 36px;gap:8px;margin-bottom:4px;align-items:center;">
+          <div class="col-header-row" style="display:grid;grid-template-columns:150px 60px 110px 110px 70px 110px 36px;gap:8px;margin-bottom:4px;align-items:center;">
             <span style="font-size:12px;font-weight:600;color:var(--muted);">設備</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">數量</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">進場日期</span>
@@ -1009,7 +989,7 @@
           <button id="btn-add-material" class="btn btn-ghost" style="font-size:12px;">+ 新增材料</button>
         </div>
         <div class="card-body">
-          <div style="display:grid;grid-template-columns:120px 100px 100px 120px 120px 36px;gap:8px;margin-bottom:6px;align-items:center;">
+          <div class="col-header-row" style="display:grid;grid-template-columns:120px 100px 100px 120px 120px 36px;gap:8px;margin-bottom:6px;align-items:center;">
             <span style="font-size:12px;font-weight:600;color:var(--muted);">材料種類</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">進場數量</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">收件人</span>
