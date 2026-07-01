@@ -218,9 +218,74 @@
   @media (max-width: 900px) {
     .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
   }
-  @media (max-width: 640px) {
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-    #sidebar { display: none; }
+  @media (max-width: 768px) {
+    /* sidebar 改成固定在底部的導覽列 */
+    #sidebar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      top: auto;
+      width: 100%;
+      height: auto;
+      min-height: unset;
+      flex-direction: row;
+      z-index: 100;
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .sidebar-logo { display: none; }
+    .sidebar-bottom { display: none; }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: row;
+      padding: 0;
+      flex: 1;
+      overflow-x: auto;
+      gap: 0;
+    }
+    .nav-section-label { display: none; }
+    .nav-btn {
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 4px;
+      font-size: 10px;
+      flex: 1;
+      min-width: 52px;
+      border-radius: 0;
+      justify-content: center;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .nav-btn .icon { font-size: 20px; width: auto; }
+
+    /* main 內容區底部留空間給導覽列 */
+    #main { margin-bottom: 64px; }
+
+    /* topbar 簡化 */
+    .topbar { padding: 0 14px; height: 50px; }
+    .desktop-only { display: none !important; }
+
+    /* content 內邊距縮小 */
+    .content { padding: 14px; }
+
+    /* card header 可換行 */
+    .card-header { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
+    .card-body { padding: 14px; }
+
+    /* grid 全部單欄 */
+    .grid-2, .grid-3, .grid-4, .month-stat-grid { grid-template-columns: 1fr; }
+
+    /* 表格橫向捲動 */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* 工班、進度列的 grid 調整 */
+    .worker-row { grid-template-columns: 1fr 1fr !important; }
+
+    /* KPI 卡片字體縮小 */
+    .kpi-card .kpi-value { font-size: 22px; }
+
+    /* topbar 儲存按鈕文字縮短 */
+    .btn-primary { font-size: 12px; padding: 6px 10px; }
   }
 
   /* ── Form ── */
@@ -579,9 +644,9 @@
     </div>
     <div class="topbar-actions">
       <span id="draft-status" style="font-size:12px;color:var(--muted);white-space:nowrap;"></span>
-      <button class="btn btn-ghost" style="font-size:12px;" onclick="syncFromCloud()" title="從 Google Sheets 拉取最新資料">☁ 同步</button>
-      <button class="btn btn-ghost" onclick="clearForm()">🗑 清除</button>
-      <button class="btn btn-ghost" onclick="window.print()">🖨 列印</button>
+      <button class="btn btn-ghost desktop-only" style="font-size:12px;" onclick="syncFromCloud()" title="從 Google Sheets 拉取最新資料">☁ 同步</button>
+      <button class="btn btn-ghost desktop-only" onclick="clearForm()">🗑 清除</button>
+      <button class="btn btn-ghost desktop-only" onclick="window.print()">🖨 列印</button>
       <button class="btn btn-primary" onclick="saveReport()">💾 儲存日報表</button>
     </div>
   </div>
