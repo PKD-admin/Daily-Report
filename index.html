@@ -318,7 +318,7 @@
   .badge-blue   { background: #DAE9F6; color: #1A4A7A; }
 
   /* ── Defect Table ── */
-  .defect-table { width: 100%; border-collapse: collapse; }
+  .defect-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .defect-table th {
     background: var(--bg);
     font-size: 11px;
@@ -331,10 +331,17 @@
     border-bottom: 1px solid var(--border);
   }
   .defect-table td {
-    padding: 9px 12px;
+    padding: 9px 8px;
     border-bottom: 1px solid var(--border);
     font-size: 13px;
     vertical-align: middle;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .defect-table td input, .defect-table td select {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .defect-table tr:last-child td { border-bottom: none; }
   .defect-table tr:hover td { background: var(--bg); }
@@ -669,7 +676,7 @@
             <span></span>
           </div>
           <div id="worker-rows" style="display:flex;flex-direction:column;gap:8px;"></div>
-          <button class="btn btn-ghost" style="margin-top:8px;font-size:12px;" onclick="addWorkerRow()">+ 新增工班人員</button>
+          <button id="btn-add-worker" class="btn btn-ghost" style="margin-top:8px;font-size:12px;">+ 新增工班人員</button>
           <div style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted);">
             今日在場人員合計：<strong id="total-workers" style="color:var(--navy);font-size:15px;font-variant-numeric:tabular-nums;">0</strong> 人
           </div>
@@ -681,7 +688,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="icon">📐</span> 今日施工進度</div>
-          <button class="btn btn-ghost" style="font-size:12px;" onclick="addProgressRow()">+ 新增區域</button>
+          <button id="btn-add-progress" class="btn btn-ghost" style="font-size:12px;">+ 新增區域</button>
         </div>
         <div class="card-body" id="progress-section-stick">
           <div style="display:grid;grid-template-columns:70px 70px 80px 100px 170px 110px 36px;gap:8px;margin-bottom:4px;align-items:center;">
@@ -753,7 +760,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="icon">🏗️</span> 機具設備</div>
-          <button class="btn btn-ghost" style="font-size:12px;" onclick="addEquipmentRow()">+ 新增設備</button>
+          <button id="btn-add-equipment" class="btn btn-ghost" style="font-size:12px;">+ 新增設備</button>
         </div>
         <div class="card-body">
           <div style="display:grid;grid-template-columns:150px 60px 110px 110px 70px 110px 36px;gap:8px;margin-bottom:4px;align-items:center;">
@@ -773,7 +780,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="icon">📦</span> 材料進場紀錄</div>
-          <button class="btn btn-ghost" style="font-size:12px;" onclick="addMaterialRow()">+ 新增材料</button>
+          <button id="btn-add-material" class="btn btn-ghost" style="font-size:12px;">+ 新增材料</button>
         </div>
         <div class="card-body">
           <div style="display:grid;grid-template-columns:120px 100px 100px 120px 120px 36px;gap:8px;margin-bottom:6px;align-items:center;">
@@ -801,15 +808,15 @@
           <!-- 查驗清單 -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <span style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">查驗清單</span>
-            <button class="btn btn-ghost" style="font-size:12px;" onclick="addInspectRow()">+ 新增查驗</button>
+            <button id="btn-add-inspect" class="btn btn-ghost" style="font-size:12px;">+ 新增查驗</button>
           </div>
           <div class="table-wrap">
             <table class="defect-table" id="inspect-table">
               <thead>
                 <tr>
                   <th style="width:36px;">#</th>
-                  <th>查驗項目</th>
-                  <th style="width:120px;">查驗結果</th>
+                  <th style="width:260px;">查驗項目</th>
+                  <th style="width:110px;">查驗結果</th>
                   <th>備註</th>
                   <th style="width:36px;"></th>
                 </tr>
@@ -823,19 +830,19 @@
           <!-- 缺失清單 -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px;margin-bottom:10px;">
             <span style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">缺失清單</span>
-            <button class="btn btn-ghost" style="font-size:12px;" onclick="addDefectRow()">+ 新增缺失</button>
+            <button id="btn-add-defect" class="btn btn-ghost" style="font-size:12px;">+ 新增缺失</button>
           </div>
           <div class="table-wrap">
             <table class="defect-table" id="defect-table">
               <thead>
                 <tr>
                   <th style="width:36px;">#</th>
-                  <th>缺失描述</th>
-                  <th style="width:130px;">缺失類別</th>
-                  <th style="width:80px;">棟別</th>
+                  <th style="width:220px;">缺失描述</th>
+                  <th style="width:100px;">缺失類別</th>
+                  <th style="width:70px;">棟別</th>
                   <th style="width:70px;">區域</th>
-                  <th style="width:80px;">樓層</th>
-                  <th style="width:100px;">狀態</th>
+                  <th style="width:70px;">樓層</th>
+                  <th style="width:90px;">狀態</th>
                   <th style="width:36px;"></th>
                 </tr>
               </thead>
@@ -1223,7 +1230,7 @@
 
 <script>
 // ════════════════ State ════════════════
-let reports = JSON.parse(localStorage.getItem('cwReports') || '[]');
+let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwPy6tv9qTlW2EUlmlwqEIe_FLUXMe6cjLIm9EfTafjZUBEMD0RnTuP9rNtKUT0YhCi2Q/exec';
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
@@ -1273,7 +1280,7 @@ let settings = (function() {
   DEFAULT_MATERIAL_TYPES.forEach(m => { if (!s.materialTypes.includes(m)) s.materialTypes.push(m); });
   DEFAULT_STORAGE_LOCATIONS.forEach(l => { if (!s.storageLocations.includes(l)) s.storageLocations.push(l); });
   if (!s.siteManagers.includes('李宗憲')) s.siteManagers.push('李宗憲');
-  localStorage.setItem('cwSettings', JSON.stringify(s));
+  try { localStorage.setItem('cwSettings', JSON.stringify(s)); } catch(e) {}
   return s;
 })();
 let defects = [];
@@ -1284,7 +1291,7 @@ let equipmentSeq = 0;
 let sysType = 'stick';
 
 // ════════════════ Init ════════════════
-(function init() {
+function init() {
   const today = new Date().toISOString().slice(0,10);
   document.getElementById('f-date').value = today;
   updateWeekday();
@@ -1327,7 +1334,7 @@ let sysType = 'stick';
   updateProgress();
 
   // 嘗試還原未儲存草稿
-  const savedDraft = localStorage.getItem('cwDraft');
+  const savedDraft = (function(){ try { return localStorage.getItem('cwDraft'); } catch(e) { return null; } })();
   if (savedDraft) {
     try {
       const draft = JSON.parse(savedDraft);
@@ -1355,7 +1362,12 @@ let sysType = 'stick';
   }
 
   startDraftTimer();
-})();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // ════════════════ Auto Draft ════════════════
 let draftTimer = null;
@@ -1409,7 +1421,7 @@ function collectDraft() {
 
 function saveDraft() {
   const draft = collectDraft();
-  localStorage.setItem('cwDraft', JSON.stringify(draft));
+  try { localStorage.setItem('cwDraft', JSON.stringify(draft)); } catch(e) {}
   const el = document.getElementById('draft-status');
   if (el) el.textContent = '草稿已自動儲存 ' + draft.savedAt;
 }
@@ -1457,7 +1469,7 @@ function startDraftTimer() {
 }
 
 function clearDraft() {
-  localStorage.removeItem('cwDraft');
+  try { localStorage.removeItem('cwDraft'); } catch(e) {}
   const el = document.getElementById('draft-status');
   if (el) el.textContent = '';
 }
@@ -1958,7 +1970,7 @@ function generateDriveLink() {
   showToast(`Drive 連結已產生（日期：${date}）`);
   if (settings.driveId !== rootId) {
     settings.driveId = rootId;
-    localStorage.setItem('cwSettings', JSON.stringify(settings));
+    try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   }
 }
 function copyDriveLink() {
@@ -2028,7 +2040,7 @@ function saveReport() {
   if (idx >= 0) reports[idx] = report;
   else reports.push(report);
   reports.sort((a,b) => b.date.localeCompare(a.date));
-  localStorage.setItem('cwReports', JSON.stringify(reports));
+  try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
   updateProgress();
 
   // 同步到 Google Sheets
@@ -2149,7 +2161,7 @@ function deleteFilteredReports() {
   if (!count) { showToast('該月份無紀錄'); return; }
   if (!confirm(`確定刪除 ${filter} 的全部 ${count} 筆日報表？此操作無法復原。`)) return;
   reports = reports.filter(r => !r.date.startsWith(filter));
-  localStorage.setItem('cwReports', JSON.stringify(reports));
+  try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
   renderHistory();
   showToast(`已刪除 ${filter} 全部 ${count} 筆紀錄`);
 }
@@ -2157,7 +2169,7 @@ function deleteFilteredReports() {
 function deleteReport(date) {
   if (!confirm('確定刪除 ' + date + ' 的日報表？')) return;
   reports = reports.filter(r => r.date !== date);
-  localStorage.setItem('cwReports', JSON.stringify(reports));
+  try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
   renderHistory();
   showToast('已刪除 ' + date + ' 的日報表');
 }
@@ -2364,7 +2376,7 @@ function addProjectName() {
   if (!name) { showToast('請輸入工程名稱'); return; }
   if (settings.projects.includes(name)) { showToast('此工程名稱已存在'); return; }
   settings.projects.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = '';
   renderProjectDropdown();
   renderProjectList();
@@ -2375,7 +2387,7 @@ function removeProjectName(idx) {
   const name = settings.projects[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.projects.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderProjectDropdown();
   renderProjectList();
   showToast('已刪除：' + name);
@@ -2415,7 +2427,7 @@ function addReporterName() {
   if (!name) { showToast('請輸入人員姓名'); return; }
   if (settings.reporters.includes(name)) { showToast('此人員已存在'); return; }
   settings.reporters.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = '';
   renderReporterDropdown();
   renderReporterList();
@@ -2426,7 +2438,7 @@ function removeReporterName(idx) {
   const name = settings.reporters[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.reporters.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderReporterDropdown();
   renderReporterList();
   showToast('已刪除：' + name);
@@ -2467,7 +2479,7 @@ function addSiteManager() {
   if (!Array.isArray(settings.siteManagers)) settings.siteManagers = [];
   if (settings.siteManagers.includes(name)) { showToast('此人員已存在'); return; }
   settings.siteManagers.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = '';
   renderSiteManagerDropdown();
   renderSiteManagerList();
@@ -2478,7 +2490,7 @@ function removeSiteManager(idx) {
   const name = settings.siteManagers[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.siteManagers.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderSiteManagerDropdown();
   renderSiteManagerList();
   showToast('已刪除：' + name);
@@ -2518,7 +2530,7 @@ function addContractorName() {
   if (!name) { showToast('請輸入總承包商名稱'); return; }
   if (settings.contractors.includes(name)) { showToast('此總承包商已存在'); return; }
   settings.contractors.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = '';
   renderContractorDropdown();
   renderContractorList();
@@ -2529,7 +2541,7 @@ function removeContractorName(idx) {
   const name = settings.contractors[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.contractors.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderContractorDropdown();
   renderContractorList();
   showToast('已刪除：' + name);
@@ -2561,7 +2573,7 @@ function addLaborUnit() {
   if (!name) { showToast('請輸入勞務單位名稱'); return; }
   if (settings.laborUnits.includes(name)) { showToast('此勞務單位已存在'); return; }
   settings.laborUnits.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = '';
   renderLaborUnitDropdown();
   renderLaborUnitList();
@@ -2572,7 +2584,7 @@ function removeLaborUnit(idx) {
   const name = settings.laborUnits[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.laborUnits.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderLaborUnitDropdown();
   renderLaborUnitList();
   showToast('已刪除：' + name);
@@ -2594,12 +2606,12 @@ function addBlock() {
   if (!name) { showToast('請輸入棟別'); return; }
   if (settings.blocks.includes(name)) { showToast('此棟別已存在'); return; }
   settings.blocks.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = ''; renderBlockList(); showToast('已新增：' + name);
 }
 function removeBlock(idx) {
   settings.blocks.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderBlockList();
 }
 
@@ -2619,12 +2631,12 @@ function addSystem() {
   if (!name) { showToast('請輸入系統名稱'); return; }
   if (settings.systems.includes(name)) { showToast('此系統已存在'); return; }
   settings.systems.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = ''; renderSystemList(); showToast('已新增：' + name);
 }
 function removeSystem(idx) {
   settings.systems.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderSystemList();
 }
 
@@ -2645,12 +2657,12 @@ function addPanelType() {
   if (!Array.isArray(settings.panelTypes)) settings.panelTypes = [];
   if (settings.panelTypes.includes(name)) { showToast('此板片類型已存在'); return; }
   settings.panelTypes.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = ''; renderPanelTypeList(); showToast('已新增：' + name);
 }
 function removePanelType(idx) {
   settings.panelTypes.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderPanelTypeList();
 }
 
@@ -2736,12 +2748,12 @@ function addEquipmentType() {
   if (!Array.isArray(settings.equipmentTypes)) settings.equipmentTypes = [];
   if (settings.equipmentTypes.includes(name)) { showToast('此設備已存在'); return; }
   settings.equipmentTypes.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = ''; renderEquipmentTypeList(); showToast('已新增：' + name);
 }
 function removeEquipmentType(idx) {
   settings.equipmentTypes.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderEquipmentTypeList();
 }
 
@@ -2761,12 +2773,12 @@ function addEquipmentUnit() {
   if (!Array.isArray(settings.equipmentUnits)) settings.equipmentUnits = [];
   if (settings.equipmentUnits.includes(name)) { showToast('此設備單位已存在'); return; }
   settings.equipmentUnits.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = ''; renderEquipmentUnitList(); showToast('已新增：' + name);
 }
 function removeEquipmentUnit(idx) {
   settings.equipmentUnits.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderEquipmentUnitList();
 }
 
@@ -2787,12 +2799,12 @@ function addMaterialType() {
   if (!Array.isArray(settings.materialTypes)) settings.materialTypes = [];
   if (settings.materialTypes.includes(name)) { showToast('此材料種類已存在'); return; }
   settings.materialTypes.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = ''; renderMaterialTypeList(); showToast('已新增：' + name);
 }
 function removeMaterialType(idx) {
   settings.materialTypes.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderMaterialTypeList();
 }
 
@@ -2813,12 +2825,12 @@ function addStorageLocation() {
   if (!Array.isArray(settings.storageLocations)) settings.storageLocations = [];
   if (settings.storageLocations.includes(name)) { showToast('此位置已存在'); return; }
   settings.storageLocations.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = ''; renderStorageLocationList(); showToast('已新增：' + name);
 }
 function removeStorageLocation(idx) {
   settings.storageLocations.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderStorageLocationList();
 }
 
@@ -2844,7 +2856,7 @@ function addFloor() {
   if (!name) { showToast('請輸入樓層名稱'); return; }
   if (settings.floors.includes(name)) { showToast('此樓層已存在'); return; }
   settings.floors.push(name);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   input.value = '';
   renderFloorList();
   showToast('已新增：' + name);
@@ -2852,14 +2864,14 @@ function addFloor() {
 
 function removeFloor(idx) {
   settings.floors.splice(idx, 1);
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderFloorList();
 }
 
 function resetFloors() {
   if (!confirm('確定重設為預設樓層 1F~22F？')) return;
   settings.floors = [...DEFAULT_FLOORS];
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderFloorList();
   showToast('已重設為 1F~22F');
 }
@@ -2902,7 +2914,7 @@ function saveSettings() {
   settings.contractQtyUnit  = parseFloat(document.getElementById('cfg-qty-unit').value)  || 0;
   settings.contractQtyStick = parseFloat(document.getElementById('cfg-qty-stick').value) || 0;
   settings.contractQty      = settings.contractQtyUnit + settings.contractQtyStick;
-  localStorage.setItem('cwSettings', JSON.stringify(settings));
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   if (settings.driveId) document.getElementById('f-drive-root').value = settings.driveId;
   updateProgress();
   showToast('設定已儲存');
@@ -2971,8 +2983,30 @@ function showToast(msg) {
 function clearAllReports() {
   if (!confirm('確定清除全部歷史日報表？此操作無法復原。')) return;
   reports = [];
-  localStorage.setItem('cwReports', JSON.stringify(reports));
+  try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
   renderHistory();
   showToast('已清除全部歷史紀錄');
+}
+
+// ════ Safe button binding (direct addEventListener, no inline onclick) ════
+function bindButtons() {
+  var map = {
+    'btn-add-worker':    function(){ addWorkerRow(); },
+    'btn-add-progress':  function(){ addProgressRow(); },
+    'btn-add-equipment': function(){ addEquipmentRow(); },
+    'btn-add-material':  function(){ addMaterialRow(); },
+    'btn-add-inspect':   function(){ addInspectRow(); },
+    'btn-add-defect':    function(){ addDefectRow(); },
+  };
+  Object.keys(map).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', map[id]);
+    else console.warn('bindButtons: element not found:', id);
+  });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bindButtons);
+} else {
+  bindButtons();
 }
 </script>
