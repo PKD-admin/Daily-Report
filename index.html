@@ -476,6 +476,12 @@
 
     /* ── 月報表 ── */
     .month-stat-grid { grid-template-columns: 1fr 1fr !important; }
+
+    /* ── 手機版查驗/缺失改用卡片，隱藏表格 ── */
+    #inspect-table-wrap { display: none !important; }
+    #defect-table-wrap  { display: none !important; }
+    #inspect-list-mobile { display: block !important; }
+    #defect-list-mobile  { display: block !important; }
   }
 
   /* ── Form ── */
@@ -1088,7 +1094,8 @@
             <span class="subsection-label">查驗清單</span>
             <button id="btn-add-inspect" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增查驗</button>
           </div>
-          <div class="table-wrap">
+          <div id="inspect-list-mobile" style="display:none;"></div>
+          <div class="table-wrap" id="inspect-table-wrap">
             <table class="defect-table" id="inspect-table">
               <thead>
                 <tr>
@@ -1110,7 +1117,8 @@
             <span class="subsection-label">缺失清單</span>
             <button id="btn-add-defect" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增缺失</button>
           </div>
-          <div class="table-wrap">
+          <div id="defect-list-mobile" style="display:none;"></div>
+          <div class="table-wrap" id="defect-table-wrap">
             <table class="defect-table" id="defect-table">
               <thead>
                 <tr>
@@ -2197,6 +2205,8 @@ function addInspectRow(item, result, note) {
   tr.appendChild(noteTd);
   tr.appendChild(delTd);
   tbody.appendChild(tr);
+  // 手機版卡片同步
+  renderInspectMobile();
 }
 
 function removeInspect(seq) {
@@ -2212,6 +2222,7 @@ function removeInspect(seq) {
   if (!inspections.length) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無查驗記錄，點擊「+ 新增查驗」</td></tr>';
   }
+  renderInspectMobile();
 }
 
 function renderInspectTable() {
@@ -2220,6 +2231,7 @@ function renderInspectTable() {
   const tbody = document.getElementById('inspect-tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無查驗記錄，點擊「+ 新增查驗」</td></tr>';
+  renderInspectMobile();
 }
 
 // ════════════════ Defects ════════════════
@@ -2307,6 +2319,8 @@ function addDefectRow(desc, cat, block, dir, floor, status) {
   tr.appendChild(blockTd); tr.appendChild(dirTd); tr.appendChild(floorTd);
   tr.appendChild(statusTd); tr.appendChild(delTd);
   tbody.appendChild(tr);
+  // 手機版卡片同步
+  renderDefectMobile();
 }
 
 function removeDefect(seq) {
@@ -2322,6 +2336,7 @@ function removeDefect(seq) {
   if (!defects.length) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無缺失記錄，點擊「+ 新增缺失」</td></tr>';
   }
+  renderDefectMobile();
 }
 
 function renderDefectTable() {
@@ -2330,6 +2345,7 @@ function renderDefectTable() {
   const tbody = document.getElementById('defect-tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無缺失記錄，點擊「+ 新增缺失」</td></tr>';
+  renderDefectMobile();
 }
 
 // ════════════════ Progress ════════════════
@@ -3862,5 +3878,101 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', bindButtons);
 } else {
   bindButtons();
+}
+
+// ── 手機版查驗卡片渲染 ──
+function renderInspectMobile() {
+  var container = document.getElementById('inspect-list-mobile');
+  if (!container) return;
+  if (!inspections.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:16px;">尚無查驗記錄，點擊「+ 新增查驗」</div>';
+    return;
+  }
+  container.innerHTML = '';
+  inspections.forEach(function(obj, i) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;';
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:13px;font-weight:700;color:var(--muted);">查驗 ' + String(i+1).padStart(2,'0') + '</span>' +
+        '<button class="btn btn-ghost" style="width:44px;min-width:44px;min-height:44px;font-size:15px;" onclick="removeInspect(' + obj.seq + ')">✕</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px;">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--muted);">查驗項目</span>' +
+        '<select id="mi-item-' + obj.seq + '" style="width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;">' +
+          '<option value="">請選擇查驗項目</option>' + INSPECT_ITEMS_HTML +
+        '</select>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px;">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--muted);">查驗結果</span>' +
+        '<select id="mi-result-' + obj.seq + '" style="width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;">' +
+          '<option>合格</option><option>待改善</option><option>不合格</option><option>待觀察</option>' +
+        '</select>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px;">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--muted);">備註</span>' +
+        '<input type="text" id="mi-note-' + obj.seq + '" placeholder="備註…" value="' + (obj.note||'').replace(/"/g,'&quot;') + '" style="width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;">' +
+      '</div>';
+    container.appendChild(card);
+
+    // 設定值並綁定事件
+    var itemSel = document.getElementById('mi-item-' + obj.seq);
+    if (itemSel) { itemSel.value = obj.item; itemSel.addEventListener('change', (function(o){ return function(){ o.item = this.value; var t = document.getElementById('inspect-tbody'); if(t){ var tr=t.querySelector('tr[data-seq="'+o.seq+'"]'); if(tr){ var s=tr.querySelector('select'); if(s) s.value=this.value; } } }; })(obj)); }
+    var resSel = document.getElementById('mi-result-' + obj.seq);
+    if (resSel) { resSel.value = obj.result; resSel.addEventListener('change', (function(o){ return function(){ o.result = this.value; var t = document.getElementById('inspect-tbody'); if(t){ var tr=t.querySelector('tr[data-seq="'+o.seq+'"]'); if(tr){ var sels=tr.querySelectorAll('select'); if(sels[1]) sels[1].value=this.value; } } }; })(obj)); }
+    var noteInp = document.getElementById('mi-note-' + obj.seq);
+    if (noteInp) { noteInp.addEventListener('input', (function(o){ return function(){ o.note = this.value; }; })(obj)); }
+  });
+}
+
+// ── 手機版缺失卡片渲染 ──
+function renderDefectMobile() {
+  var container = document.getElementById('defect-list-mobile');
+  if (!container) return;
+  if (!defects.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:16px;">尚無缺失記錄，點擊「+ 新增缺失」</div>';
+    return;
+  }
+  container.innerHTML = '';
+  var blockOpts = '<option value="">棟別</option>' + (settings.blocks||[]).map(function(b){ return '<option>'+b+'</option>'; }).join('');
+  var dirOpts = '<option value="">區域</option>' + DIRECTIONS.map(function(d){ return '<option>'+d+'</option>'; }).join('');
+  var floorOpts = '<option value="">樓層</option>' + (settings.floors||[]).map(function(f){ return '<option>'+f+'</option>'; }).join('');
+  defects.forEach(function(obj, i) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;';
+    var selStyle = 'width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;';
+    var inpStyle = 'width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;';
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:13px;font-weight:700;color:var(--muted);">缺失 ' + String(i+1).padStart(2,'0') + '</span>' +
+        '<button class="btn btn-ghost" style="width:44px;min-width:44px;min-height:44px;font-size:15px;" onclick="removeDefect(' + obj.seq + ')">✕</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:14px;font-weight:700;color:var(--muted);">缺失描述</span>' +
+        '<input type="text" id="md-desc-' + obj.seq + '" placeholder="缺失描述…" value="' + (obj.desc||'').replace(/"/g,'&quot;') + '" style="' + inpStyle + '"></div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:14px;font-weight:700;color:var(--muted);">缺失類別</span>' +
+        '<select id="md-cat-' + obj.seq + '" style="' + selStyle + '"><option>尺寸偏差</option><option>外觀損傷</option><option>安裝錯誤</option><option>防水問題</option><option>其他</option></select></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
+        '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13px;font-weight:700;color:var(--muted);">棟別</span><select id="md-block-' + obj.seq + '" style="font-size:16px;min-height:50px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;width:100%;">' + blockOpts + '</select></div>' +
+        '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13px;font-weight:700;color:var(--muted);">區域</span><select id="md-dir-' + obj.seq + '" style="font-size:16px;min-height:50px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;width:100%;">' + dirOpts + '</select></div>' +
+        '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13px;font-weight:700;color:var(--muted);">樓層</span><select id="md-floor-' + obj.seq + '" style="font-size:16px;min-height:50px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;width:100%;">' + floorOpts + '</select></div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:14px;font-weight:700;color:var(--muted);">狀態</span>' +
+        '<select id="md-status-' + obj.seq + '" style="' + selStyle + '"><option>待改善</option><option>改善中</option><option>已改善</option></select></div>';
+    container.appendChild(card);
+
+    // 設定值並綁定事件
+    var descEl = document.getElementById('md-desc-' + obj.seq);
+    if (descEl) { descEl.addEventListener('input', (function(o){ return function(){ o.desc=this.value; }; })(obj)); }
+    var catEl = document.getElementById('md-cat-' + obj.seq);
+    if (catEl) { catEl.value = obj.cat; catEl.addEventListener('change', (function(o){ return function(){ o.cat=this.value; }; })(obj)); }
+    var blkEl = document.getElementById('md-block-' + obj.seq);
+    if (blkEl) { blkEl.value = obj.block; blkEl.addEventListener('change', (function(o){ return function(){ o.block=this.value; }; })(obj)); }
+    var dirEl = document.getElementById('md-dir-' + obj.seq);
+    if (dirEl) { dirEl.value = obj.dir; dirEl.addEventListener('change', (function(o){ return function(){ o.dir=this.value; }; })(obj)); }
+    var flrEl = document.getElementById('md-floor-' + obj.seq);
+    if (flrEl) { flrEl.value = obj.floor; flrEl.addEventListener('change', (function(o){ return function(){ o.floor=this.value; }; })(obj)); }
+    var stEl = document.getElementById('md-status-' + obj.seq);
+    if (stEl) { stEl.value = obj.status; stEl.addEventListener('change', (function(o){ return function(){ o.status=this.value; }; })(obj)); }
+  });
 }
 </script>
