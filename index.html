@@ -553,6 +553,12 @@
     <button class="nav-btn" onclick="showView('monthly')" id="nav-monthly">
       <span class="icon">📊</span> 月報表統計
     </button>
+    <button class="nav-btn" onclick="showView('tracker')" id="nav-tracker">
+      <span class="icon">🔧</span> 缺失追蹤
+    </button>
+    <button class="nav-btn" onclick="showView('materials')" id="nav-materials">
+      <span class="icon">📦</span> 進料查詢
+    </button>
     <div class="nav-section-label">設定</div>
     <button class="nav-btn" onclick="showView('settings')" id="nav-settings">
       <span class="icon">⚙️</span> 專案設定
@@ -997,6 +1003,144 @@
               <div class="kpi-value" id="m-defect-open">–</div>
               <div class="kpi-sub">尚待處理</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 設備累積使用天數 -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">🏗️</span> 設備機具累積使用天數</div></div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table class="history-table" id="m-equipment-table">
+              <thead>
+                <tr>
+                  <th>設備名稱</th>
+                  <th>設備單位</th>
+                  <th style="text-align:right;">使用次數（筆）</th>
+                  <th style="text-align:right;">累積天數（天）</th>
+                </tr>
+              </thead>
+              <tbody id="m-equipment-tbody">
+                <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">尚無設備資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ 缺失追蹤 ════ -->
+    <div class="view" id="view-tracker">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🔧</span> 缺失追蹤總表</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="tracker-filter-status" style="font-size:12px;" onchange="renderTracker()">
+              <option value="">全部狀態</option>
+              <option value="待改善">待改善</option>
+              <option value="改善中">改善中</option>
+              <option value="已改善">已改善</option>
+            </select>
+            <select id="tracker-filter-cat" style="font-size:12px;" onchange="renderTracker()">
+              <option value="">全部類別</option>
+              <option value="尺寸偏差">尺寸偏差</option>
+              <option value="外觀損傷">外觀損傷</option>
+              <option value="安裝錯誤">安裝錯誤</option>
+              <option value="防水問題">防水問題</option>
+              <option value="其他">其他</option>
+            </select>
+            <select id="tracker-filter-block" style="font-size:12px;" onchange="renderTracker()">
+              <option value="">全部棟別</option>
+            </select>
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="exportTrackerCSV()">⬇ 匯出 CSV</button>
+          </div>
+        </div>
+        <!-- 統計橫欄 -->
+        <div id="tracker-kpi" style="display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;"></div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table class="defect-table" id="tracker-table" style="table-layout:fixed;width:100%;">
+              <thead>
+                <tr>
+                  <th style="width:36px;">#</th>
+                  <th style="width:96px;">發現日期</th>
+                  <th style="width:200px;">缺失描述</th>
+                  <th style="width:90px;">缺失類別</th>
+                  <th style="width:64px;">棟別</th>
+                  <th style="width:64px;">區域</th>
+                  <th style="width:64px;">樓層</th>
+                  <th style="width:100px;">目前狀態</th>
+                  <th style="width:96px;">更新時間</th>
+                </tr>
+              </thead>
+              <tbody id="tracker-tbody">
+                <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">尚無缺失紀錄</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ 進料查詢 ════ -->
+    <div class="view" id="view-materials">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📦</span> 進料查詢</div>
+          <button class="btn btn-ghost" style="font-size:12px;" onclick="exportMaterialsCSV()">⬇ 匯出 CSV</button>
+        </div>
+        <!-- 篩選列 -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--border);align-items:center;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;color:var(--muted);font-weight:600;">材料種類</label>
+            <select id="mat-filter-type" style="font-size:12px;min-width:130px;" onchange="renderMaterialsView()">
+              <option value="">全部種類</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;color:var(--muted);font-weight:600;">收件人</label>
+            <select id="mat-filter-receiver" style="font-size:12px;min-width:120px;" onchange="renderMaterialsView()">
+              <option value="">全部收件人</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;color:var(--muted);font-weight:600;">日期（起）</label>
+            <input type="date" id="mat-filter-date-from" style="font-size:12px;" onchange="renderMaterialsView()">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;color:var(--muted);font-weight:600;">日期（迄）</label>
+            <input type="date" id="mat-filter-date-to" style="font-size:12px;" onchange="renderMaterialsView()">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;color:var(--muted);font-weight:600;">關鍵字搜尋</label>
+            <input type="text" id="mat-filter-keyword" placeholder="搜尋材料、收件人…" style="font-size:12px;min-width:160px;" oninput="renderMaterialsView()">
+          </div>
+          <div style="margin-top:18px;">
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="clearMatFilters()">清除篩選</button>
+          </div>
+        </div>
+        <!-- 統計條 -->
+        <div id="mat-summary" style="display:flex;gap:20px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);flex-wrap:wrap;"></div>
+        <!-- 表格 -->
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table class="history-table" style="table-layout:fixed;width:100%;">
+              <thead>
+                <tr>
+                  <th style="width:36px;">#</th>
+                  <th style="width:100px;">進料日期</th>
+                  <th style="width:120px;">材料種類</th>
+                  <th style="width:100px;">數量</th>
+                  <th style="width:100px;">收件人</th>
+                  <th style="width:120px;">儲存位置</th>
+                  <th>備註</th>
+                </tr>
+              </thead>
+              <tbody id="mat-view-tbody">
+                <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">尚無進料紀錄</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1480,12 +1624,14 @@ function showView(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
-  const titles = {daily:'工地日報表填寫', history:'歷史日報表', monthly:'月報表統計', settings:'專案設定'};
-  const tags   = {daily:'今日', history:'查閱', monthly:'本月', settings:'設定'};
+  const titles = {daily:'工地日報表填寫', history:'歷史日報表', monthly:'月報表統計', tracker:'缺失追蹤總表', materials:'進料查詢', settings:'專案設定'};
+  const tags   = {daily:'今日', history:'查閱', monthly:'本月', tracker:'追蹤', materials:'查詢', settings:'設定'};
   document.getElementById('topbar-title-text').textContent = titles[name];
   document.getElementById('topbar-tag').textContent = tags[name];
   if (name === 'history') renderHistory();
   if (name === 'monthly') renderMonthly();
+  if (name === 'tracker') renderTracker();
+  if (name === 'materials') renderMaterialsView();
   if (name === 'settings' && !settingsUnlocked) lockSettings();
 }
 
@@ -2207,6 +2353,7 @@ function renderMonthly() {
   drawDailyChart(data);
   drawWeatherChart(data);
   drawWorkerChart(data);
+  renderMonthlyEquipment(data);
 }
 
 function drawDailyChart(data) {
@@ -2329,17 +2476,368 @@ function drawWeatherChart(data) {
 function drawWorkerChart(data) {
   const container = document.getElementById('worker-bar-chart');
   if (!data.length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">尚無資料</p>'; return; }
-  const labels = ['組立工','吊裝工','防水/填縫工','監工/工程師'];
-  const keys = ['w1','w2','w3','w4'];
-  const totals = keys.map(k => data.reduce((s,r) => s+(r.workers[k]||0),0));
-  const max = Math.max(...totals, 1);
-  container.innerHTML = labels.map((l,i) => `
-    <div class="mini-chart-bar-row">
-      <span class="mini-chart-label" style="width:80px;text-align:right;white-space:nowrap;">${l}</span>
-      <div class="mini-bar-wrap"><div class="mini-bar" style="width:${totals[i]/max*100}%"></div></div>
-      <span class="mini-bar-val">${totals[i]}</span>
-    </div>
-  `).join('');
+  // Aggregate qty by laborUnit across all reports
+  const totalsMap = {};
+  data.forEach(function(r) {
+    if (!Array.isArray(r.workerData)) return;
+    r.workerData.forEach(function(w) {
+      if (!w.laborUnit) return;
+      totalsMap[w.laborUnit] = (totalsMap[w.laborUnit] || 0) + (parseInt(w.qty) || 0);
+    });
+  });
+  const labels = Object.keys(totalsMap);
+  if (!labels.length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">尚無工班資料</p>'; return; }
+  const totals = labels.map(function(l) { return totalsMap[l]; });
+  const max = Math.max.apply(null, totals.concat([1]));
+  container.innerHTML = labels.map(function(l, i) {
+    return '<div class="mini-chart-bar-row">' +
+      '<span class="mini-chart-label" style="width:80px;text-align:right;white-space:nowrap;">' + l + '</span>' +
+      '<div class="mini-bar-wrap"><div class="mini-bar" style="width:' + (totals[i]/max*100) + '%"></div></div>' +
+      '<span class="mini-bar-val">' + totals[i] + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+// ════════════════ 缺失追蹤 ════════════════
+
+// 缺失追蹤：每筆缺失附帶發現日期，狀態可在此頁直接修改並寫回 localStorage
+// 資料結構：r.defects[i] = {desc, cat, block, dir, floor, status}，狀態更新後即存入 r.defects[i].status
+
+function renderTracker() {
+  // 更新棟別篩選選項
+  var blockSel = document.getElementById('tracker-filter-block');
+  var blockVal = blockSel ? blockSel.value : '';
+  if (blockSel) {
+    var blocks = (settings.blocks || []);
+    blockSel.innerHTML = '<option value="">全部棟別</option>' +
+      blocks.map(function(b) { return '<option value="' + b + '"' + (b===blockVal?' selected':'') + '>' + b + '</option>'; }).join('');
+  }
+
+  var filterStatus = (document.getElementById('tracker-filter-status')||{}).value || '';
+  var filterCat    = (document.getElementById('tracker-filter-cat')||{}).value    || '';
+  var filterBlock  = blockVal;
+
+  // 彙整所有日報的缺失，記錄來源日期與日報索引
+  var all = [];
+  reports.forEach(function(r, ri) {
+    (r.defects || []).forEach(function(d, di) {
+      all.push({
+        date:   r.date || '',
+        ri:     ri,
+        di:     di,
+        desc:   d.desc   || '',
+        cat:    d.cat    || '',
+        block:  d.block  || '',
+        dir:    d.dir    || '',
+        floor:  d.floor  || '',
+        status: d.status || '待改善',
+        updatedAt: d.updatedAt || ''
+      });
+    });
+  });
+
+  // 統計 KPI
+  var total   = all.length;
+  var pending = all.filter(function(d){ return d.status === '待改善'; }).length;
+  var inprog  = all.filter(function(d){ return d.status === '改善中'; }).length;
+  var done    = all.filter(function(d){ return d.status === '已改善'; }).length;
+  var rate    = total ? Math.round(done/total*100) : 0;
+
+  var kpiEl = document.getElementById('tracker-kpi');
+  if (kpiEl) {
+    kpiEl.innerHTML =
+      '<div style="text-align:center;min-width:72px;">' +
+        '<div style="font-size:22px;font-weight:700;color:var(--navy);">' + total + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">缺失總數</div>' +
+      '</div>' +
+      '<div style="width:1px;background:var(--border);margin:0 4px;"></div>' +
+      '<div style="text-align:center;min-width:72px;">' +
+        '<div style="font-size:22px;font-weight:700;color:#E05252;">' + pending + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">待改善</div>' +
+      '</div>' +
+      '<div style="text-align:center;min-width:72px;">' +
+        '<div style="font-size:22px;font-weight:700;color:#F4A742;">' + inprog + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">改善中</div>' +
+      '</div>' +
+      '<div style="text-align:center;min-width:72px;">' +
+        '<div style="font-size:22px;font-weight:700;color:#44A87A;">' + done + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">已改善</div>' +
+      '</div>' +
+      '<div style="width:1px;background:var(--border);margin:0 4px;"></div>' +
+      '<div style="text-align:center;min-width:72px;">' +
+        '<div style="font-size:22px;font-weight:700;color:var(--blue);">' + rate + '%</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">改善率</div>' +
+      '</div>';
+  }
+
+  // 篩選
+  var filtered = all.filter(function(d) {
+    if (filterStatus && d.status !== filterStatus) return false;
+    if (filterCat    && d.cat    !== filterCat)    return false;
+    if (filterBlock  && d.block  !== filterBlock)  return false;
+    return true;
+  });
+
+  var tbody = document.getElementById('tracker-tbody');
+  if (!tbody) return;
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">' +
+      (total ? '目前篩選條件無符合缺失' : '尚無缺失紀錄') + '</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(function(d, idx) {
+    var tr = document.createElement('tr');
+
+    // 序號
+    var numTd = document.createElement('td');
+    numTd.style.cssText = 'color:var(--muted);font-variant-numeric:tabular-nums;';
+    numTd.textContent = String(idx+1).padStart(2,'0');
+
+    // 發現日期
+    var dateTd = document.createElement('td');
+    dateTd.style.cssText = 'font-variant-numeric:tabular-nums;font-size:12px;';
+    dateTd.textContent = d.date;
+
+    // 缺失描述
+    var descTd = document.createElement('td');
+    descTd.style.cssText = 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;';
+    descTd.title = d.desc;
+    descTd.textContent = d.desc || '（無描述）';
+
+    // 缺失類別
+    var catTd = document.createElement('td');
+    catTd.textContent = d.cat;
+
+    // 棟別
+    var blockTd = document.createElement('td');
+    blockTd.textContent = d.block;
+
+    // 區域
+    var dirTd = document.createElement('td');
+    dirTd.textContent = d.dir;
+
+    // 樓層
+    var floorTd = document.createElement('td');
+    floorTd.textContent = d.floor;
+
+    // 狀態 select（直接改寫回 localStorage）
+    var statusTd = document.createElement('td');
+    var statusSel = document.createElement('select');
+    statusSel.style.cssText = 'font-size:12px;border:none;background:transparent;width:100%;cursor:pointer;';
+    var statusColors = {'待改善':'color:#E05252;','改善中':'color:#F4A742;','已改善':'color:#44A87A;'};
+    ['待改善','改善中','已改善'].forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      if (s === d.status) opt.selected = true;
+      statusSel.appendChild(opt);
+    });
+    statusSel.style.cssText += (statusColors[d.status] || '') + 'font-weight:600;border:none;background:transparent;font-size:12px;width:100%;cursor:pointer;';
+    statusSel.addEventListener('change', function() {
+      var newStatus = this.value;
+      var now = new Date().toISOString().slice(0,10);
+      // 寫回 reports 陣列
+      if (reports[d.ri] && Array.isArray(reports[d.ri].defects) && reports[d.ri].defects[d.di]) {
+        reports[d.ri].defects[d.di].status = newStatus;
+        reports[d.ri].defects[d.di].updatedAt = now;
+      }
+      try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
+      // 更新顏色
+      this.style.color = (statusColors[newStatus]||'').replace('color:','').replace(';','');
+      d.status = newStatus;
+      // 重新渲染 KPI
+      renderTracker();
+    });
+    statusTd.appendChild(statusSel);
+
+    // 更新時間
+    var updTd = document.createElement('td');
+    updTd.style.cssText = 'font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;';
+    updTd.textContent = d.updatedAt || '—';
+
+    tr.appendChild(numTd); tr.appendChild(dateTd); tr.appendChild(descTd);
+    tr.appendChild(catTd); tr.appendChild(blockTd); tr.appendChild(dirTd);
+    tr.appendChild(floorTd); tr.appendChild(statusTd); tr.appendChild(updTd);
+    tbody.appendChild(tr);
+  });
+}
+
+function exportTrackerCSV() {
+  var all = [];
+  reports.forEach(function(r) {
+    (r.defects || []).forEach(function(d) {
+      all.push([r.date, d.desc, d.cat, d.block, d.dir, d.floor, d.status, d.updatedAt||'']);
+    });
+  });
+  if (!all.length) { showToast('尚無缺失資料可匯出'); return; }
+  var header = ['發現日期','缺失描述','缺失類別','棟別','區域','樓層','目前狀態','更新日期'];
+  var csv = '﻿' + [header].concat(all).map(function(row) {
+    return row.map(function(c) { return '"' + String(c||'').replace(/"/g,'""') + '"'; }).join(',');
+  }).join('\r\n');
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = '缺失追蹤_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ════════════════ 設備月報統計 ════════════════
+
+function renderMonthlyEquipment(data) {
+  // data = 月份篩選後的日報陣列
+  // 以「設備名稱 + 設備單位」為 key，加總 days，計算筆數
+  var map = {};
+  data.forEach(function(r) {
+    (r.equipment || []).forEach(function(eq) {
+      if (!eq.type) return;
+      var key = eq.type + '||' + (eq.unit || '');
+      if (!map[key]) map[key] = { type: eq.type, unit: eq.unit || '—', count: 0, totalDays: 0 };
+      map[key].count++;
+      map[key].totalDays += (parseInt(eq.days) || 0);
+    });
+  });
+  var rows = Object.values(map);
+  var tbody = document.getElementById('m-equipment-tbody');
+  if (!tbody) return;
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">本月尚無設備資料</td></tr>';
+    return;
+  }
+  rows.sort(function(a,b){ return b.totalDays - a.totalDays; });
+  tbody.innerHTML = rows.map(function(r) {
+    return '<tr>' +
+      '<td>' + r.type + '</td>' +
+      '<td>' + r.unit + '</td>' +
+      '<td style="text-align:right;font-variant-numeric:tabular-nums;">' + r.count + '</td>' +
+      '<td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--blue);">' + r.totalDays + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ════════════════ 進料查詢 ════════════════
+
+function renderMaterialsView() {
+  // 彙整所有日報的進料紀錄（不限月份）
+  var all = [];
+  reports.forEach(function(r) {
+    (r.materials || []).forEach(function(m) {
+      if (!m.type && !m.qty && !m.receiver) return;
+      all.push({
+        date:     r.date     || '',
+        type:     m.type     || '',
+        qty:      m.qty      || '',
+        receiver: m.receiver || '',
+        location: m.location || '',
+        note:     r.materialNote || ''
+      });
+    });
+  });
+
+  // 動態更新篩選選項（去重）
+  var types     = Array.from(new Set(all.map(function(m){ return m.type;     }).filter(Boolean))).sort();
+  var receivers = Array.from(new Set(all.map(function(m){ return m.receiver; }).filter(Boolean))).sort();
+
+  var typeSel = document.getElementById('mat-filter-type');
+  var recvSel = document.getElementById('mat-filter-receiver');
+  var typeVal = typeSel ? typeSel.value : '';
+  var recvVal = recvSel ? recvSel.value : '';
+
+  if (typeSel) {
+    typeSel.innerHTML = '<option value="">全部種類</option>' +
+      types.map(function(t){ return '<option value="' + t + '"' + (t===typeVal?' selected':'') + '>' + t + '</option>'; }).join('');
+  }
+  if (recvSel) {
+    recvSel.innerHTML = '<option value="">全部收件人</option>' +
+      receivers.map(function(r){ return '<option value="' + r + '"' + (r===recvVal?' selected':'') + '>' + r + '</option>'; }).join('');
+  }
+
+  // 讀取篩選值
+  var filterType    = typeVal;
+  var filterReceiver= recvVal;
+  var filterFrom    = (document.getElementById('mat-filter-date-from')||{}).value || '';
+  var filterTo      = (document.getElementById('mat-filter-date-to')||{}).value   || '';
+  var keyword       = ((document.getElementById('mat-filter-keyword')||{}).value || '').trim().toLowerCase();
+
+  var filtered = all.filter(function(m) {
+    if (filterType     && m.type     !== filterType)     return false;
+    if (filterReceiver && m.receiver !== filterReceiver) return false;
+    if (filterFrom     && m.date     <  filterFrom)      return false;
+    if (filterTo       && m.date     >  filterTo)        return false;
+    if (keyword && !(
+      m.type.toLowerCase().includes(keyword)     ||
+      m.receiver.toLowerCase().includes(keyword) ||
+      m.qty.toLowerCase().includes(keyword)      ||
+      m.location.toLowerCase().includes(keyword) ||
+      m.note.toLowerCase().includes(keyword)
+    )) return false;
+    return true;
+  });
+
+  // 依日期排序（新→舊）
+  filtered.sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  // 統計條
+  var summary = document.getElementById('mat-summary');
+  if (summary) {
+    var totalCount = filtered.length;
+    var typeSet = new Set(filtered.map(function(m){ return m.type; }).filter(Boolean));
+    summary.innerHTML =
+      '<span>共 <strong>' + totalCount + '</strong> 筆進料紀錄</span>' +
+      '<span style="color:var(--border);">|</span>' +
+      '<span>涉及 <strong>' + typeSet.size + '</strong> 種材料</span>';
+  }
+
+  // 表格
+  var tbody = document.getElementById('mat-view-tbody');
+  if (!tbody) return;
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">' +
+      (all.length ? '目前篩選條件無符合紀錄' : '尚無進料紀錄') + '</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(m, i) {
+    var noteCell = m.note ? ('<span title="' + m.note.replace(/"/g,'&quot;') + '" style="color:var(--muted);font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;max-width:200px;">' + m.note + '</span>') : '<span style="color:var(--muted);">—</span>';
+    return '<tr>' +
+      '<td style="color:var(--muted);font-variant-numeric:tabular-nums;">' + String(i+1).padStart(2,'0') + '</td>' +
+      '<td style="font-variant-numeric:tabular-nums;font-size:12px;">' + m.date + '</td>' +
+      '<td><strong>' + (m.type||'—') + '</strong></td>' +
+      '<td style="font-variant-numeric:tabular-nums;">' + (m.qty||'—') + '</td>' +
+      '<td>' + (m.receiver||'—') + '</td>' +
+      '<td style="font-size:12px;color:var(--muted);">' + (m.location||'—') + '</td>' +
+      '<td>' + noteCell + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function clearMatFilters() {
+  var ids = ['mat-filter-type','mat-filter-receiver','mat-filter-date-from','mat-filter-date-to','mat-filter-keyword'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderMaterialsView();
+}
+
+function exportMaterialsCSV() {
+  var all = [];
+  reports.forEach(function(r) {
+    (r.materials || []).forEach(function(m) {
+      if (!m.type && !m.qty && !m.receiver) return;
+      all.push([r.date, m.type||'', m.qty||'', m.receiver||'', m.location||'', r.materialNote||'']);
+    });
+  });
+  if (!all.length) { showToast('尚無進料資料可匯出'); return; }
+  var header = ['進料日期','材料種類','數量','收件人','儲存位置','備註'];
+  var csv = '﻿' + [header].concat(all).map(function(row) {
+    return row.map(function(c){ return '"' + String(c||'').replace(/"/g,'""') + '"'; }).join(',');
+  }).join('\r\n');
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = '進料查詢_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
 }
 
 // ════════════════ Project Names ════════════════
