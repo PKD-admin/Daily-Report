@@ -375,6 +375,44 @@
       align-self: flex-end !important;
     }
 
+    /* ── 設備欄位包裝（手機顯示標籤） ── */
+    .eq-field {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 4px !important;
+      width: 100% !important;
+    }
+    .eq-label {
+      display: block !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      color: var(--muted) !important;
+    }
+    .equipment-row .btn-ghost {
+      width: 54px !important; min-width: 54px !important;
+      align-self: flex-end !important;
+    }
+
+    /* ── 查驗/缺失 標題列 ── */
+    .subsection-header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 8px !important;
+    }
+    .subsection-label {
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      color: var(--navy) !important;
+      text-transform: none !important;
+      letter-spacing: 0 !important;
+    }
+    .subsection-btn {
+      width: 100% !important;
+      justify-content: center !important;
+      min-height: 50px !important;
+      font-size: 16px !important;
+    }
+
     /* ── 表格 ── */
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { font-size: 15px; }
@@ -642,6 +680,20 @@
     transition: all 0.15s;
   }
   .sys-opt.active { background: var(--blue); color: white; }
+
+  /* ── subsection header（查驗/缺失標題列） ── */
+  .subsection-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 10px;
+  }
+  .subsection-label {
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  /* ── 設備欄位標籤（桌面隱藏，手機顯示） ── */
+  .eq-field { display: contents; }
+  .eq-label { display: none; }
 
   /* ── Separator ── */
   .section-sep {
@@ -1012,9 +1064,9 @@
         </div>
         <div class="card-body">
           <!-- 查驗清單 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <span style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">查驗清單</span>
-            <button id="btn-add-inspect" class="btn btn-ghost" style="font-size:12px;">+ 新增查驗</button>
+          <div class="subsection-header">
+            <span class="subsection-label">查驗清單</span>
+            <button id="btn-add-inspect" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增查驗</button>
           </div>
           <div class="table-wrap">
             <table class="defect-table" id="inspect-table">
@@ -1034,9 +1086,9 @@
           </div>
 
           <!-- 缺失清單 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px;margin-bottom:10px;">
-            <span style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">缺失清單</span>
-            <button id="btn-add-defect" class="btn btn-ghost" style="font-size:12px;">+ 新增缺失</button>
+          <div class="subsection-header" style="margin-top:24px;">
+            <span class="subsection-label">缺失清單</span>
+            <button id="btn-add-defect" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增缺失</button>
           </div>
           <div class="table-wrap">
             <table class="defect-table" id="defect-table">
@@ -3457,12 +3509,12 @@ function addEquipmentRow(type, qty, dateIn, dateOut, unit) {
   row.className = 'equipment-row';
   row.style.cssText = 'display:grid;grid-template-columns:150px 60px 110px 110px 70px 110px 36px;gap:8px;margin-bottom:8px;align-items:center;';
   row.innerHTML = `
-    <select id="eq-type-${id}">${buildOpts(settings.equipmentTypes||[], type, '設備')}</select>
-    <input type="number" id="eq-qty-${id}" placeholder="台" min="1" value="${qty||''}" style="width:100%;font-variant-numeric:tabular-nums;">
-    <input type="date" id="eq-in-${id}" value="${dateIn||''}" style="width:100%;" oninput="calcEqDays(${id})">
-    <input type="date" id="eq-out-${id}" value="${dateOut||''}" style="width:100%;" oninput="calcEqDays(${id})">
-    <input type="number" id="eq-days-${id}" placeholder="天" readonly style="width:100%;background:var(--bg);color:var(--blue);font-weight:700;cursor:default;">
-    <select id="eq-unit-${id}">${buildOpts(settings.equipmentUnits||[], unit, '設備單位')}</select>
+    <div class="eq-field"><span class="eq-label">設備名稱</span><select id="eq-type-${id}">${buildOpts(settings.equipmentTypes||[], type, '設備')}</select></div>
+    <div class="eq-field"><span class="eq-label">數量（台）</span><input type="number" id="eq-qty-${id}" placeholder="台" min="1" value="${qty||''}" style="width:100%;font-variant-numeric:tabular-nums;"></div>
+    <div class="eq-field"><span class="eq-label">進場日期</span><input type="date" id="eq-in-${id}" value="${dateIn||''}" style="width:100%;" oninput="calcEqDays(${id})"></div>
+    <div class="eq-field"><span class="eq-label">退場日期</span><input type="date" id="eq-out-${id}" value="${dateOut||''}" style="width:100%;" oninput="calcEqDays(${id})"></div>
+    <div class="eq-field"><span class="eq-label">使用天數</span><input type="number" id="eq-days-${id}" placeholder="天" readonly style="width:100%;background:var(--bg);color:var(--blue);font-weight:700;cursor:default;"></div>
+    <div class="eq-field"><span class="eq-label">設備單位</span><select id="eq-unit-${id}">${buildOpts(settings.equipmentUnits||[], unit, '設備單位')}</select></div>
     <button class="btn btn-ghost" style="padding:7px 10px;font-size:12px;" onclick="removeEquipmentRow(${id})">✕</button>
   `;
   container.appendChild(row);
