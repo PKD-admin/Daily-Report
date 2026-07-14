@@ -1648,7 +1648,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbzOV0lRHyo7DU2Acqzo7s73lR5SQjeFd8pP_rIK3COpdYuW2IqndUxzTDi7Jy_GCegX/exec'; })();
+var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbwaNZEXro7q56s-mKU7alj1P80_f8FSrOQo8NV8FhtgsAZViItAeW43cF6-FAcl9LGZ/exec'; })();
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
@@ -2497,7 +2497,9 @@ function copyDriveLink() {
 }
 
 // ════════════════ Save Report ════════════════
+let isSaving = false;
 function saveReport() {
+  if (isSaving) { showToast('儲存中，請稍候…'); return; }
   const date = document.getElementById('f-date').value;
   if (!date) { showToast('請選擇日期'); return; }
   const weather = document.querySelector('input[name="weather"]:checked');
@@ -2567,6 +2569,7 @@ function saveReport() {
     cumStick: parseFloat(document.getElementById('f-cum-stick').value) || 0,
   });
   clearDraft(); // 正式儲存後清除草稿
+  isSaving = true;
   showToast('日報表已儲存，正在同步至 Google Sheets…');
   fetch(GAS_URL, {
     method: 'POST',
@@ -2574,9 +2577,11 @@ function saveReport() {
   })
     .then(function(res) { return res.json(); })
     .then(function(r) {
+      isSaving = false;
       if (r.ok) showToast('✓ 已同步至 Google Sheets（' + date + '）');
       else showToast('⚠ Sheets 回應異常：' + (r.error || '未知錯誤'));
     }).catch(function() {
+      isSaving = false;
       showToast('⚠ 本機已儲存，但 Google Sheets 同步失敗，請檢查網路');
     });
 }
