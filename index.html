@@ -1143,31 +1143,20 @@
       <!-- 施工照片 -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><span class="icon">📷</span> 施工照片 / Google Drive 連結</div>
+          <div class="card-title"><span class="icon">📷</span> 施工照片</div>
         </div>
         <div class="card-body">
-          <div class="field">
-            <label>Google Drive 根目錄 ID（僅需設定一次）</label>
-            <div style="display:flex;gap:8px;">
-              <input type="text" id="f-drive-root" placeholder="貼上 Google Drive 資料夾 ID…">
-              <button class="btn btn-ghost" style="white-space:nowrap;" onclick="generateDriveLink()">產生連結</button>
-            </div>
-          </div>
-          <div class="drive-link-box" id="drive-link-box" style="display:none;">
-            <span class="drive-icon">📂</span>
-            <a href="#" id="drive-link-url" target="_blank" rel="noopener"></a>
-            <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;margin-left:auto;" onclick="copyDriveLink()">複製</button>
-          </div>
-          <div style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.8;">
-            📌 系統將自動以「今日日期」命名建議的 Drive 子資料夾路徑，例如：<br>
-            <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px;">專案資料夾 ▶ 施工照片 ▶ 2026-06-30</code>
-          </div>
-          <div class="photo-grid" id="photo-preview-grid">
-            <div class="photo-slot" title="點擊上傳">
-              <span style="font-size:24px;">📷</span>
-              <span>新增照片</span>
-            </div>
-          </div>
+          <!-- 隱藏的 file input -->
+          <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none;">
+          <!-- 上傳按鈕 -->
+          <button class="btn btn-ghost" id="btn-add-photo" style="width:100%;min-height:54px;font-size:16px;border:2px dashed var(--border);margin-bottom:12px;">
+            📷 新增照片（相機 / 相簿）
+          </button>
+          <!-- 上傳狀態 -->
+          <div id="photo-upload-status" style="display:none;font-size:14px;color:var(--muted);margin-bottom:10px;"></div>
+          <!-- 照片縮圖區 -->
+          <div id="photo-preview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;"></div>
+          <!-- 照片說明 -->
           <div class="field" style="margin-top:12px;">
             <label>照片說明</label>
             <textarea id="f-photo-note" placeholder="說明照片內容或施工部位…" style="min-height:52px;"></textarea>
@@ -1655,7 +1644,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwPy6tv9qTlW2EUlmlwqEIe_FLUXMe6cjLIm9EfTafjZUBEMD0RnTuP9rNtKUT0YhCi2Q/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCkxeL9SY-2LQAggcL187LAGMZ2twAEBTm6QFPnHEPYvHvpyPDyDAwaZFxMrxp-QNT/exec';
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
@@ -3865,6 +3854,7 @@ function bindButtons() {
     'btn-add-progress':  function(){ addProgressRow(); },
     'btn-add-equipment': function(){ addEquipmentRow(); },
     'btn-add-material':  function(){ addMaterialRow(); },
+    'btn-add-photo':     function(){ document.getElementById('photo-file-input').click(); },
     'btn-add-inspect':   function(){ addInspectRow(); },
     'btn-add-defect':    function(){ addDefectRow(); },
   };
@@ -3974,5 +3964,101 @@ function renderDefectMobile() {
     var stEl = document.getElementById('md-status-' + obj.seq);
     if (stEl) { stEl.value = obj.status; stEl.addEventListener('change', (function(o){ return function(){ o.status=this.value; }; })(obj)); }
   });
+}
+
+// ════════════════ 照片上傳 ════════════════
+var uploadedPhotos = []; // [{fileName, thumbUrl, viewUrl}]
+
+function initPhotoUpload() {
+  var input = document.getElementById('photo-file-input');
+  if (!input) return;
+  input.addEventListener('change', function() {
+    var files = Array.from(this.files);
+    if (!files.length) return;
+    files.forEach(function(file) { uploadPhoto(file); });
+    this.value = ''; // 清除 input 以便重複選同一張
+  });
+}
+
+function uploadPhoto(file) {
+  var date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
+  var statusEl = document.getElementById('photo-upload-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = '⏳ 上傳中：' + file.name + '（請稍候…）';
+
+  // 壓縮圖片後轉 base64
+  compressImage(file, 1200, 0.8, function(b64, mimeType) {
+    var url = GAS_URL
+      + '?action=uploadPhoto'
+      + '&date=' + encodeURIComponent(date)
+      + '&mime=' + encodeURIComponent(mimeType)
+      + '&name=' + encodeURIComponent(file.name)
+      + '&photo=' + encodeURIComponent(b64);
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.ok) {
+          uploadedPhotos.push({ fileName: res.fileName, thumbUrl: res.thumbUrl, viewUrl: res.viewUrl });
+          renderPhotoGrid();
+          statusEl.textContent = '✓ 上傳成功：' + res.fileName;
+          setTimeout(function(){ statusEl.style.display='none'; }, 2000);
+        } else {
+          statusEl.textContent = '⚠ 上傳失敗：' + (res.error || '未知錯誤');
+        }
+      })
+      .catch(function(err) {
+        statusEl.textContent = '⚠ 網路錯誤，請重試';
+      });
+  });
+}
+
+function compressImage(file, maxSize, quality, callback) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+        else       { w = Math.round(w * maxSize / h); h = maxSize; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', quality);
+      var b64 = dataUrl.split(',')[1];
+      callback(b64, 'image/jpeg');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderPhotoGrid() {
+  var grid = document.getElementById('photo-preview-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  uploadedPhotos.forEach(function(p, i) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--bg);';
+    var img = document.createElement('img');
+    img.src = p.thumbUrl;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer;';
+    img.onclick = function() { window.open(p.viewUrl, '_blank'); };
+    var del = document.createElement('button');
+    del.textContent = '✕';
+    del.style.cssText = 'position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;line-height:1;';
+    del.onclick = function() { uploadedPhotos.splice(i,1); renderPhotoGrid(); };
+    wrap.appendChild(img);
+    wrap.appendChild(del);
+    grid.appendChild(wrap);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPhotoUpload);
+} else {
+  initPhotoUpload();
 }
 </script>
