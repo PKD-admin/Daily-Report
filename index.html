@@ -1624,6 +1624,11 @@
       <div class="card">
         <div class="card-header"><div class="card-title"><span class="icon">⚙️</span> 其他設定</div></div>
         <div class="card-body">
+          <div class="field">
+            <label>GAS 網址</label>
+            <input type="text" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:12px;">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">部署 Apps Script 後貼上新網址，按儲存設定即生效。</div>
+          </div>
           <div style="margin-top:16px;">
             <button class="btn btn-primary" onclick="saveSettings()">儲存設定</button>
           </div>
@@ -1641,7 +1646,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbys9iNeynQ1jyrU6ZFxFtmTrM-XXzB0oazb0JmoDrN8YgdlmVPFJd55W5ljXNqcQ_U/exec';
+var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbwWSIRBTOmsUUdrrsIprQN91PQ8mdzeJZykFFU6azFOoRJqOdTYUwyZyFzeuxE4Qv3p/exec'; })();
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
@@ -1737,6 +1742,8 @@ function init() {
     document.getElementById('f-drive-root').value = settings.driveId;
     document.getElementById('cfg-drive-id').value = settings.driveId;
   }
+  var gasEl = document.getElementById('cfg-gas-url');
+  if (gasEl) gasEl.value = settings.gasUrl || GAS_URL;
   if (settings.contractQtyUnit) document.getElementById('cfg-qty-unit').value  = settings.contractQtyUnit;
   if (settings.contractQtyStick) document.getElementById('cfg-qty-stick').value = settings.contractQtyStick;
   const totalAll = (settings.contractQtyUnit || 0) + (settings.contractQtyStick || 0);
@@ -3805,12 +3812,14 @@ function syncContractTotal() {
 }
 
 function saveSettings() {
-  settings.driveId          = document.getElementById('cfg-drive-id').value;
+  settings.driveId          = document.getElementById('cfg-drive-id') ? document.getElementById('cfg-drive-id').value : '';
   settings.contractQtyUnit  = parseFloat(document.getElementById('cfg-qty-unit').value)  || 0;
   settings.contractQtyStick = parseFloat(document.getElementById('cfg-qty-stick').value) || 0;
   settings.contractQty      = settings.contractQtyUnit + settings.contractQtyStick;
+  var newGasUrl = document.getElementById('cfg-gas-url').value.trim();
+  if (newGasUrl) { settings.gasUrl = newGasUrl; GAS_URL = newGasUrl; }
   try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
-  if (settings.driveId) document.getElementById('f-drive-root').value = settings.driveId;
+  if (settings.driveId) { var dr = document.getElementById('f-drive-root'); if(dr) dr.value = settings.driveId; }
   updateProgress();
   showToast('設定已儲存');
 }
@@ -4031,16 +4040,11 @@ function uploadPhoto(file) {
   statusEl.style.display = 'block';
   statusEl.textContent = '⏳ 上傳中：' + file.name + '（請稍候…）';
 
-  // 壓縮圖片後轉 base64
   compressImage(file, 1200, 0.8, function(b64, mimeType) {
-    var url = GAS_URL
-      + '?action=uploadPhoto'
-      + '&date=' + encodeURIComponent(date)
-      + '&mime=' + encodeURIComponent(mimeType)
-      + '&name=' + encodeURIComponent(file.name)
-      + '&photo=' + encodeURIComponent(b64);
-
-    fetch(url)
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'uploadPhoto', date: date, mime: mimeType, name: file.name, photo: b64 })
+    })
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.ok) {
@@ -4052,7 +4056,7 @@ function uploadPhoto(file) {
           statusEl.textContent = '⚠ 上傳失敗：' + (res.error || '未知錯誤');
         }
       })
-      .catch(function(err) {
+      .catch(function() {
         statusEl.textContent = '⚠ 網路錯誤，請重試';
       });
   });
@@ -4114,14 +4118,10 @@ function uploadDefectPhoto(file, seq, obj) {
   if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳缺失照片中…'; }
 
   compressImage(file, 1200, 0.8, function(b64, mimeType) {
-    var url = GAS_URL
-      + '?action=uploadDefectPhoto'
-      + '&date=' + encodeURIComponent(date)
-      + '&mime=' + encodeURIComponent(mimeType)
-      + '&name=' + encodeURIComponent('defect_' + seq + '_' + file.name)
-      + '&photo=' + encodeURIComponent(b64);
-
-    fetch(url)
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: 'defect_' + seq + '_' + file.name, photo: b64 })
+    })
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.ok) {
