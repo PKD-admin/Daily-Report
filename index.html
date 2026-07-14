@@ -1427,7 +1427,7 @@
           <div style="font-size:40px;margin-bottom:16px;">🔒</div>
           <div style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:8px;">專案設定</div>
           <div style="font-size:14px;color:var(--muted);margin-bottom:28px;">請輸入管理員密碼以存取設定</div>
-          <input type="password" id="settings-pwd-input" placeholder="請輸入密碼" style="text-align:center;font-size:16px;letter-spacing:0.1em;margin-bottom:12px;" onkeydown="if(event.key==='Enter')verifySettingsPassword()">
+          <input type="password" id="settings-pwd-input" placeholder="請輸入數字密碼" inputmode="numeric" pattern="[0-9]*" style="text-align:center;font-size:16px;letter-spacing:0.1em;margin-bottom:12px;" onkeydown="if(event.key==='Enter')verifySettingsPassword()">
           <div id="settings-pwd-error" style="color:var(--danger);font-size:13px;margin-bottom:12px;display:none;">密碼錯誤，請重試</div>
           <button class="btn btn-primary" style="width:100%;font-size:15px;padding:10px;" onclick="verifySettingsPassword()">確認</button>
         </div>
@@ -3788,7 +3788,7 @@ function resetFloors() {
 }
 
 // ════════════════ Settings Password ════════════════
-const SETTINGS_PASSWORD = 'pkd2026';
+const SETTINGS_PASSWORD = '0000';
 let settingsUnlocked = false;
 
 function verifySettingsPassword() {
