@@ -1648,7 +1648,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbxi0yNYEmjIYqMpa_z9c6ChrNQcmbedSTIOvTYN0TNJY8C76PFHQ8G6aHMaIA8CKOrI/exec'; })();
+var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbzOV0lRHyo7DU2Acqzo7s73lR5SQjeFd8pP_rIK3COpdYuW2IqndUxzTDi7Jy_GCegX/exec'; })();
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
@@ -1833,6 +1833,7 @@ function collectDraft() {
       if (!t) return null;
       return {type:t.value,qty:q.value,receiver:rc.value,location:l.value,nextDate:n.value};
     }).filter(Boolean),
+    equipment: getEquipmentData(),
     savedAt: new Date().toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}),
   };
   return draft;
@@ -1876,6 +1877,12 @@ function restoreDraft(draft) {
     materialRows = [];
     draft.materialRows.forEach(r => addMaterialRow(r.type, r.qty, r.receiver, r.location, r.nextDate));
   }
+  // 機具設備
+  if (draft.equipment && draft.equipment.length) {
+    loadEquipmentData(draft.equipment);
+  } else {
+    addEquipmentRow();
+  }
 
   updateProgress();
   const el = document.getElementById('draft-status');
@@ -1884,7 +1891,7 @@ function restoreDraft(draft) {
 
 function startDraftTimer() {
   if (draftTimer) clearInterval(draftTimer);
-  draftTimer = setInterval(saveDraft, 30000); // 每 30 秒自動儲存
+  draftTimer = setInterval(saveDraft, 10000); // 每 10 秒自動儲存
 }
 
 // ════════════════ 雲端同步 ════════════════
