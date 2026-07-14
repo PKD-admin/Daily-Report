@@ -1738,8 +1738,8 @@ function init() {
   renderStorageLocationList();
 
   if (settings.driveId) {
-    document.getElementById('f-drive-root').value = settings.driveId;
-    document.getElementById('cfg-drive-id').value = settings.driveId;
+    var drEl = document.getElementById('f-drive-root');
+    if (drEl) drEl.value = settings.driveId;
   }
   var gasEl = document.getElementById('cfg-gas-url');
   if (gasEl) gasEl.value = settings.gasUrl || GAS_URL;
