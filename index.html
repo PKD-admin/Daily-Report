@@ -1117,6 +1117,7 @@
             <span class="subsection-label">缺失清單</span>
             <button id="btn-add-defect" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增缺失</button>
           </div>
+          <div id="defect-photo-upload-status" style="display:none;font-size:14px;color:var(--muted);margin-bottom:8px;"></div>
           <div id="defect-list-mobile" style="display:none;"></div>
           <div class="table-wrap" id="defect-table-wrap">
             <table class="defect-table" id="defect-table">
@@ -1646,7 +1647,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbwWSIRBTOmsUUdrrsIprQN91PQ8mdzeJZykFFU6azFOoRJqOdTYUwyZyFzeuxE4Qv3p/exec'; })();
+var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbxwXZlGWRQPM4or_L2ZuQc2Eb2PZ5PTGlk9WQr1OsKqJ0vdUW-ONE8TGrHDV4meBvHF/exec'; })();
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
@@ -2559,9 +2560,10 @@ function saveReport() {
   });
   clearDraft(); // 正式儲存後清除草稿
   showToast('日報表已儲存，正在同步至 Google Sheets…');
-  // GAS doGet 支援跨來源，用 GET + action=save 傳送資料
-  var syncUrl = GAS_URL + '?action=save&data=' + encodeURIComponent(JSON.stringify(payload));
-  fetch(syncUrl)
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'save', data: payload })
+  })
     .then(function(res) { return res.json(); })
     .then(function(r) {
       if (r.ok) showToast('✓ 已同步至 Google Sheets（' + date + '）');
@@ -4112,7 +4114,7 @@ if (document.readyState === 'loading') {
 // ════════════════ 缺失照片上傳 ════════════════
 function uploadDefectPhoto(file, seq, obj) {
   var date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
-  var statusEl = document.getElementById('photo-upload-status');
+  var statusEl = document.getElementById('defect-photo-upload-status');
   if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳缺失照片中…'; }
 
   compressImage(file, 1200, 0.8, function(b64, mimeType) {
