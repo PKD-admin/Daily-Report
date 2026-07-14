@@ -1129,6 +1129,7 @@
                   <th style="width:70px;">區域</th>
                   <th style="width:70px;">樓層</th>
                   <th style="width:90px;">狀態</th>
+                  <th style="width:50px;">照片</th>
                   <th style="width:36px;"></th>
                 </tr>
               </thead>
@@ -1644,7 +1645,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCkxeL9SY-2LQAggcL187LAGMZ2twAEBTm6QFPnHEPYvHvpyPDyDAwaZFxMrxp-QNT/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzoBgvXAcfm-0hSds75AKM1lXOfJG64g_ITg1qyIOJ-vrpGrnyojppD_VWXREZxnWXO/exec';
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
@@ -2304,9 +2305,33 @@ function addDefectRow(desc, cat, block, dir, floor, status) {
   delBtn.addEventListener('click', function() { removeDefect(seq); });
   delTd.appendChild(delBtn);
 
+  const photoTd = document.createElement('td');
+  photoTd.style.cssText = 'padding:4px;';
+  const photoInput = document.createElement('input');
+  photoInput.type = 'file';
+  photoInput.accept = 'image/*';
+  photoInput.style.cssText = 'display:none;';
+  photoInput.id = 'defect-photo-input-' + seq;
+  const photoBtn = document.createElement('button');
+  photoBtn.className = 'btn btn-ghost';
+  photoBtn.style.cssText = 'padding:4px 8px;font-size:11px;white-space:nowrap;';
+  photoBtn.textContent = '📷';
+  photoBtn.title = '上傳缺失照片';
+  photoBtn.addEventListener('click', function() { photoInput.click(); });
+  photoInput.addEventListener('change', function() {
+    if (this.files[0]) uploadDefectPhoto(this.files[0], seq, obj);
+  });
+  const photoThumb = document.createElement('img');
+  photoThumb.id = 'defect-photo-thumb-' + seq;
+  photoThumb.style.cssText = 'display:none;width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:pointer;margin-left:4px;vertical-align:middle;';
+  photoThumb.onclick = function() { if(obj.photoUrl) window.open(obj.photoUrl,'_blank'); };
+  photoTd.appendChild(photoInput);
+  photoTd.appendChild(photoBtn);
+  photoTd.appendChild(photoThumb);
+
   tr.appendChild(numTd); tr.appendChild(descTd); tr.appendChild(catTd);
   tr.appendChild(blockTd); tr.appendChild(dirTd); tr.appendChild(floorTd);
-  tr.appendChild(statusTd); tr.appendChild(delTd);
+  tr.appendChild(statusTd); tr.appendChild(photoTd); tr.appendChild(delTd);
   tbody.appendChild(tr);
   // 手機版卡片同步
   renderDefectMobile();
@@ -3932,6 +3957,7 @@ function renderDefectMobile() {
     card.style.cssText = 'background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;';
     var selStyle = 'width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;';
     var inpStyle = 'width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;';
+    var thumbHtml = obj.photoThumb ? '<img src="'+obj.photoThumb+'" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="window.open(\''+obj.photoUrl+'\',\'_blank\')">' : '';
     card.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
         '<span style="font-size:13px;font-weight:700;color:var(--muted);">缺失 ' + String(i+1).padStart(2,'0') + '</span>' +
@@ -3947,7 +3973,13 @@ function renderDefectMobile() {
         '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13px;font-weight:700;color:var(--muted);">樓層</span><select id="md-floor-' + obj.seq + '" style="font-size:16px;min-height:50px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;width:100%;">' + floorOpts + '</select></div>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:14px;font-weight:700;color:var(--muted);">狀態</span>' +
-        '<select id="md-status-' + obj.seq + '" style="' + selStyle + '"><option>待改善</option><option>改善中</option><option>已改善</option></select></div>';
+        '<select id="md-status-' + obj.seq + '" style="' + selStyle + '"><option>待改善</option><option>改善中</option><option>已改善</option></select></div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--muted);">缺失照片</span>' +
+        '<input type="file" id="md-photo-input-' + obj.seq + '" accept="image/*" style="display:none;">' +
+        '<button class="btn btn-ghost" style="width:100%;min-height:50px;font-size:16px;" onclick="document.getElementById(\'md-photo-input-' + obj.seq + '\').click()">📷 上傳缺失照片</button>' +
+        (thumbHtml ? thumbHtml : '') +
+      '</div>';
     container.appendChild(card);
 
     // 設定值並綁定事件
@@ -3963,6 +3995,8 @@ function renderDefectMobile() {
     if (flrEl) { flrEl.value = obj.floor; flrEl.addEventListener('change', (function(o){ return function(){ o.floor=this.value; }; })(obj)); }
     var stEl = document.getElementById('md-status-' + obj.seq);
     if (stEl) { stEl.value = obj.status; stEl.addEventListener('change', (function(o){ return function(){ o.status=this.value; }; })(obj)); }
+    var photoInp = document.getElementById('md-photo-input-' + obj.seq);
+    if (photoInp) { photoInp.addEventListener('change', (function(o, s){ return function(){ if(this.files[0]) uploadDefectPhoto(this.files[0], s, o); }; })(obj, obj.seq)); }
   });
 }
 
@@ -4060,5 +4094,39 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initPhotoUpload);
 } else {
   initPhotoUpload();
+}
+
+// ════════════════ 缺失照片上傳 ════════════════
+function uploadDefectPhoto(file, seq, obj) {
+  var date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
+  var statusEl = document.getElementById('photo-upload-status');
+  if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳缺失照片中…'; }
+
+  compressImage(file, 1200, 0.8, function(b64, mimeType) {
+    var url = GAS_URL
+      + '?action=uploadDefectPhoto'
+      + '&date=' + encodeURIComponent(date)
+      + '&mime=' + encodeURIComponent(mimeType)
+      + '&name=' + encodeURIComponent('defect_' + seq + '_' + file.name)
+      + '&photo=' + encodeURIComponent(b64);
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.ok) {
+          obj.photoUrl = res.viewUrl;
+          obj.photoThumb = res.thumbUrl;
+          var thumb = document.getElementById('defect-photo-thumb-' + seq);
+          if (thumb) { thumb.src = res.thumbUrl; thumb.style.display='inline-block'; }
+          if (statusEl) { statusEl.textContent='✓ 缺失照片上傳成功'; setTimeout(function(){ statusEl.style.display='none'; },2000); }
+          renderDefectMobile();
+        } else {
+          if (statusEl) statusEl.textContent='⚠ 上傳失敗：' + (res.error||'未知錯誤');
+        }
+      })
+      .catch(function() {
+        if (statusEl) statusEl.textContent='⚠ 網路錯誤，請重試';
+      });
+  });
 }
 </script>
