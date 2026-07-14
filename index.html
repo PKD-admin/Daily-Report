@@ -1684,8 +1684,7 @@ let settings = (function() {
   if (!s.contractQtyUnit) s.contractQtyUnit = 0;
   if (!s.contractQtyStick) s.contractQtyStick = 0;
   // ensure named defaults exist in lists
-  ['華固中央置地','台肥南港C4'].forEach(p => { if (!s.projects.includes(p)) s.projects.push(p); });
-  if (!s.contractors.includes('品興營造')) s.contractors.push('品興營造');
+
   ['壯觀','易琦','鴻宸','永恩','哲緯','威廷','睿展','伍銓','言荃'].forEach(u => {
     if (!s.laborUnits.includes(u)) s.laborUnits.push(u);
   });
@@ -1694,7 +1693,6 @@ let settings = (function() {
   DEFAULT_EQUIPMENT_UNITS.forEach(u => { if (!s.equipmentUnits.includes(u)) s.equipmentUnits.push(u); });
   DEFAULT_MATERIAL_TYPES.forEach(m => { if (!s.materialTypes.includes(m)) s.materialTypes.push(m); });
   DEFAULT_STORAGE_LOCATIONS.forEach(l => { if (!s.storageLocations.includes(l)) s.storageLocations.push(l); });
-  if (!s.siteManagers.includes('李宗憲')) s.siteManagers.push('李宗憲');
   try { localStorage.setItem('cwSettings', JSON.stringify(s)); } catch(e) {}
   return s;
 })();
