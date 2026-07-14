@@ -1648,7 +1648,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbznfM5jkdy105wownz5cwQqhy57nP1D-4RtN7-r-7EdQGFg7CrSmMytAIvzHCgtKPOP/exec'; })();
+var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbx1MdJAuvNC9-WEXf9v51yREeOdq5KibbR1N0Zn8of4kk9sdBqObIuipuUk0gP3soa2/exec'; })();
 const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
