@@ -2678,7 +2678,8 @@ function deleteFilteredReports() {
   renderHistory();
   showToast(`刪除中，同步雲端…`);
   Promise.all(datesToDelete.map(d =>
-    fetch(GAS_URL + '?action=delete&date=' + encodeURIComponent(d)).then(r => r.json()).catch(() => ({ ok: false }))
+    fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', date: d }) })
+      .then(r => r.json()).catch(() => ({ ok: false }))
   )).then(results => {
     const failed = results.filter(r => !r.ok).length;
     if (failed === 0) showToast(`已刪除 ${filter} 全部 ${count} 筆紀錄（含雲端）`);
@@ -2692,7 +2693,7 @@ function deleteReport(date) {
   try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
   renderHistory();
   showToast('刪除中，同步雲端…');
-  fetch(GAS_URL + '?action=delete&date=' + encodeURIComponent(date))
+  fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', date: date }) })
     .then(r => r.json())
     .then(res => {
       if (res.ok) showToast('已刪除 ' + date + ' 的日報表（含雲端）');
@@ -3886,11 +3887,20 @@ function showToast(msg) {
 }
 
 function clearAllReports() {
-  if (!confirm('確定清除全部歷史日報表？此操作無法復原。')) return;
+  if (!confirm('確定清除全部歷史日報表？此操作將同時刪除雲端紀錄，無法復原。')) return;
+  const datesToDelete = reports.map(r => r.date);
   reports = [];
   try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
   renderHistory();
-  showToast('已清除全部歷史紀錄');
+  showToast('刪除中，同步雲端…');
+  Promise.all(datesToDelete.map(d =>
+    fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', date: d }) })
+      .then(r => r.json()).catch(() => ({ ok: false }))
+  )).then(results => {
+    const failed = results.filter(r => !r.ok).length;
+    if (failed === 0) showToast('已清除全部歷史紀錄（含雲端）');
+    else showToast('本機已清除，' + failed + ' 筆雲端刪除失敗');
+  });
 }
 
 // ════ Safe button binding (direct addEventListener, no inline onclick) ════
