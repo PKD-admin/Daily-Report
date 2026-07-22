@@ -1491,6 +1491,19 @@
         </div>
       </div>
 
+      <!-- 工種管理 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">👷</span> 工種管理</div></div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除工種，將出現在工人出勤的工種下拉選單中。</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input type="text" id="cfg-new-work-type" placeholder="輸入工種（例：放樣、吊裝）…" style="flex:1;" onkeydown="if(event.key==='Enter')addWorkType()">
+            <button class="btn btn-primary" onclick="addWorkType()">+ 新增</button>
+          </div>
+          <div id="work-type-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
       <!-- 系統管理 -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><div class="card-title"><span class="icon">🪟</span> 帷幕牆系統管理</div></div>
@@ -1649,7 +1662,6 @@
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
 var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbx1MdJAuvNC9-WEXf9v51yREeOdq5KibbR1N0Zn8of4kk9sdBqObIuipuUk0gP3soa2/exec'; })();
-const WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
   return `<option value="">${placeholder}</option>` +
@@ -1659,6 +1671,7 @@ let workerRows = [];
 let workerSeq = 0;
 const DEFAULT_FLOORS = ['1F','2F','3F','4F','5F','6F','7F','8F','9F','10F','11F','12F','13F','14F','15F','16F','17F','18F','19F','20F','21F','22F','23F','24F','25F','R1F','R2F','R3F','PRF'];
 const DEFAULT_SYSTEMS = ['單元','直橫料','雨遮','風除室','門窗'];
+const DEFAULT_WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
 const DEFAULT_PANEL_TYPES = ['鋁板 3t','玻璃 10+10+12A+10'];
 const DEFAULT_EQUIPMENT_TYPES = ['高空作業車','舉臂車','蜘蛛車','堆高機','25噸吊車','45噸吊車','80噸吊車','120噸吊車','200噸吊車','塔式吊車'];
 const DEFAULT_EQUIPMENT_UNITS = ['大有','展億'];
@@ -1680,6 +1693,7 @@ let settings = (function() {
   if (!Array.isArray(s.equipmentUnits)) s.equipmentUnits = [...DEFAULT_EQUIPMENT_UNITS];
   if (!Array.isArray(s.materialTypes)) s.materialTypes = [...DEFAULT_MATERIAL_TYPES];
   if (!Array.isArray(s.storageLocations)) s.storageLocations = [...DEFAULT_STORAGE_LOCATIONS];
+  if (!Array.isArray(s.workTypes) || !s.workTypes.length) s.workTypes = [...DEFAULT_WORK_TYPES];
   if (!Array.isArray(s.siteManagers)) s.siteManagers = ['李宗憲'];
   if (!s.driveId) s.driveId = '';
   if (!s.contractQty) s.contractQty = 0;
@@ -1731,6 +1745,7 @@ function init() {
   renderSiteManagerList();
   renderFloorList();
   renderBlockList();
+  renderWorkTypeList();
   renderSystemList();
   renderPanelTypeList();
   renderEquipmentTypeList();
@@ -1991,7 +2006,7 @@ function addWorkerRow(laborUnit, qty, type, dir, floor) {
     <input type="number" id="wr-qty-${id}" min="0" placeholder="人數" style="width:100%;" oninput="updateWorkerTotal()" value="${qty||''}">
     <select id="wr-type-${id}" style="width:100%;">
       <option value="">請選擇工種</option>
-      ${WORK_TYPES.map(t => `<option${t===(type||'')?'  selected':''} value="${t}">${t}</option>`).join('')}
+      ${(settings.workTypes||DEFAULT_WORK_TYPES).map(t => `<option${t===(type||'')?'  selected':''} value="${t}">${t}</option>`).join('')}
     </select>
     <select id="wr-dir-${id}" style="width:100%;">
       ${buildOpts(DIRECTIONS, dir, '區域')}
@@ -3502,6 +3517,34 @@ function removeLaborUnit(idx) {
   try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
   renderLaborUnitDropdown();
   renderLaborUnitList();
+  showToast('已刪除：' + name);
+}
+
+// ════════════════ Work Types ════════════════
+function renderWorkTypeList() {
+  const list = document.getElementById('work-type-list');
+  if (!list) return;
+  list.innerHTML = (settings.workTypes||[]).map((v,i) => `
+    <div style="display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:13px;">
+      <span>${v}</span>
+      <button style="border:none;background:transparent;cursor:pointer;color:var(--danger);font-size:12px;padding:0 2px;" onclick="removeWorkType(${i})">✕</button>
+    </div>`).join('') || '<div style="font-size:13px;color:var(--muted);">尚無工種，請新增。</div>';
+}
+function addWorkType() {
+  const input = document.getElementById('cfg-new-work-type');
+  const name = input.value.trim();
+  if (!name) { showToast('請輸入工種'); return; }
+  if (!Array.isArray(settings.workTypes)) settings.workTypes = [];
+  if (settings.workTypes.includes(name)) { showToast('此工種已存在'); return; }
+  settings.workTypes.push(name);
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  input.value = ''; renderWorkTypeList(); showToast('已新增：' + name);
+}
+function removeWorkType(idx) {
+  const name = settings.workTypes[idx];
+  settings.workTypes.splice(idx, 1);
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  renderWorkTypeList();
   showToast('已刪除：' + name);
 }
 
