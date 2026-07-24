@@ -943,7 +943,7 @@
     <div class="topbar-actions">
       <span id="draft-status" style="font-size:12px;color:var(--muted);white-space:nowrap;"></span>
       <button id="btn-enter-edit" class="btn btn-primary" onclick="enterEditMode()" style="font-size:13px;">✏️ 進入編輯模式</button>
-      <button id="btn-lock" class="btn btn-ghost" onclick="enterViewMode()" style="font-size:13px;display:none;">🔒 鎖定</button>
+      <button id="btn-cancel-edit" class="btn btn-ghost" onclick="cancelEdit()" style="font-size:13px;display:none;color:var(--danger);">✕ 取消編輯</button>
       <button id="btn-sync" class="btn btn-ghost desktop-only" style="font-size:12px;display:none;" onclick="syncFromCloud()" title="從 Google Sheets 拉取最新資料">☁ 同步</button>
       <button id="btn-clear" class="btn btn-ghost desktop-only" style="display:none;" onclick="clearForm()">🗑 清除</button>
       <button class="btn btn-ghost desktop-only" onclick="printReport()">🖨 列印 PDF</button>
@@ -1342,7 +1342,7 @@
       <button id="m-btn-save"  class="btn btn-primary" onclick="saveReport()"  style="width:100%;display:none;">💾 儲存日報表</button>
       <div style="display:flex;gap:10px;">
         <button id="m-btn-print" class="btn btn-ghost" onclick="printReport()" style="flex:1;">🖨 列印 PDF</button>
-        <button id="m-btn-lock"  class="btn btn-ghost" onclick="enterViewMode()" style="flex:1;display:none;">🔒 鎖定</button>
+        <button id="m-btn-cancel" class="btn btn-ghost" onclick="cancelEdit()" style="flex:1;display:none;color:var(--danger);">✕ 取消編輯</button>
         <button id="m-btn-clear" class="btn btn-ghost" onclick="clearForm()" style="flex:1;display:none;color:var(--danger);">🗑 清除</button>
       </div>
     </div>
@@ -1858,6 +1858,8 @@ const DEFAULT_FLOORS = ['1F','2F','3F','4F','5F','6F','7F','8F','9F','10F','11F'
 const DEFAULT_SYSTEMS = ['單元','直橫料','雨遮','風除室','門窗'];
 const DEFAULT_WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','面板美容'];
 const DEFAULT_WORK_UNITS = ['組','m','支','個','樓層','式','處'];
+// 每個工項的預設單位（選工項時自動帶出，仍可手動改）
+const DEFAULT_WORK_TYPE_UNIT = {'放樣':'組','預埋':'處','預銲':'處','吊裝':'片','安裝':'片','打膠':'m','面板美容':'片'};
 const DEFAULT_INSPECT_ITEMS = {
   '預埋 / 放樣': ['預埋件位置確認','預埋件標高','放樣基準線','預埋件外露長度'],
   '直橫料系統': ['立柱垂直度','橫料水平度','玻璃裝配尺寸','矽利康填縫','結構矽利康黏著','壓條鎖固'],
@@ -1896,6 +1898,7 @@ let settings = (function() {
   if (!Array.isArray(s.storageLocations)) s.storageLocations = [...DEFAULT_STORAGE_LOCATIONS];
   if (!Array.isArray(s.workTypes) || !s.workTypes.length) s.workTypes = [...DEFAULT_WORK_TYPES];
   if (!Array.isArray(s.workUnits) || !s.workUnits.length) s.workUnits = [...DEFAULT_WORK_UNITS];
+  if (!s.workTypeUnit || typeof s.workTypeUnit !== 'object') s.workTypeUnit = Object.assign({}, DEFAULT_WORK_TYPE_UNIT);
   if (!s.inspectItems || typeof s.inspectItems !== 'object' || !Object.keys(s.inspectItems).length) {
     s.inspectItems = JSON.parse(JSON.stringify(DEFAULT_INSPECT_ITEMS));
   }
@@ -2280,15 +2283,18 @@ var isEditMode = false;
 
 function _setDisp(id, val) { var el = document.getElementById(id); if (el) el.style.display = val; }
 
+var _editEntryDate = null; // 進入編輯時的日期，取消時用來還原
+
 function enterEditMode() {
   isEditMode = true;
+  _editEntryDate = document.getElementById('f-date').value; // 記住進入編輯時是哪一天
   var viewDaily = document.getElementById('view-daily');
   if (viewDaily) viewDaily.classList.remove('view-mode');
   // 桌機 topbar 按鈕
-  _setDisp('btn-enter-edit','none'); _setDisp('btn-lock',''); _setDisp('btn-sync','');
+  _setDisp('btn-enter-edit','none'); _setDisp('btn-cancel-edit',''); _setDisp('btn-sync','');
   _setDisp('btn-clear',''); _setDisp('btn-save','');
   // 手機底部按鈕
-  _setDisp('m-btn-enter-edit','none'); _setDisp('m-btn-save',''); _setDisp('m-btn-lock','');
+  _setDisp('m-btn-enter-edit','none'); _setDisp('m-btn-save',''); _setDisp('m-btn-cancel','');
   _setDisp('m-btn-clear','');
   updateSaveButtonState(); // 確保儲存鈕文字/狀態正確
 }
@@ -2298,11 +2304,59 @@ function enterViewMode() {
   var viewDaily = document.getElementById('view-daily');
   if (viewDaily) viewDaily.classList.add('view-mode');
   // 桌機 topbar 按鈕
-  _setDisp('btn-enter-edit',''); _setDisp('btn-lock','none'); _setDisp('btn-sync','none');
+  _setDisp('btn-enter-edit',''); _setDisp('btn-cancel-edit','none'); _setDisp('btn-sync','none');
   _setDisp('btn-clear','none'); _setDisp('btn-save','none');
   // 手機底部按鈕
-  _setDisp('m-btn-enter-edit',''); _setDisp('m-btn-save','none'); _setDisp('m-btn-lock','none');
+  _setDisp('m-btn-enter-edit',''); _setDisp('m-btn-save','none'); _setDisp('m-btn-cancel','none');
   _setDisp('m-btn-clear','none');
+}
+
+// 取消編輯：丟棄本次所有修改，還原成進入編輯前的狀態
+function cancelEdit() {
+  if (photoUploadsInFlight > 0) {
+    if (!confirm('尚有照片上傳中，確定要取消編輯並丟棄變更嗎？')) return;
+  } else if (!confirm('確定取消編輯？剛才的修改將不會儲存。')) {
+    return;
+  }
+  var d = _editEntryDate || document.getElementById('f-date').value;
+  var saved = reports.find(function(r){ return r.date === d; });
+  if (saved) {
+    // 該日期已有儲存紀錄 → 從已儲存資料重新載入（loadReport 會切到編輯頁）
+    loadReport(d);
+    enterViewMode();
+    showToast('已取消編輯，恢復為已儲存的內容');
+  } else {
+    // 這天還沒存過任何紀錄 → 清空回全新狀態
+    clearFormSilent();
+    enterViewMode();
+    showToast('已取消編輯');
+  }
+}
+
+// 靜默清空（不跳確認、不清雲端），供取消編輯使用
+function clearFormSilent() {
+  document.getElementById('f-project').value = '';
+  document.getElementById('f-owner').value = '';
+  document.getElementById('f-contractor').value = '';
+  document.getElementById('f-site-manager').value = '';
+  document.getElementById('f-reporter').value = '';
+  document.querySelectorAll('input[name="weather"]').forEach(function(r){ r.checked = false; });
+  document.getElementById('f-weather-impact').value = '無影響';
+  loadWorkerRows([]);
+  document.getElementById('progress-rows').innerHTML = ''; progressRows = []; addProgressRow();
+  document.getElementById('otherwork-rows').innerHTML = ''; otherWorkRows = []; addOtherWorkRow();
+  document.getElementById('material-rows').innerHTML = ''; materialRows = []; addMaterialRow();
+  document.getElementById('f-tomorrow-plan').value = '';
+  loadEquipmentRows([]);
+  var pn = document.getElementById('f-photo-note'); if (pn) pn.value = '';
+  uploadedPhotos = []; renderPhotoGrid();
+  issuesPhotos = []; renderIssuesPhotoGrid();
+  document.getElementById('f-issues').value = '';
+  document.getElementById('f-safety').value = '';
+  document.getElementById('f-remark').value = '';
+  renderInspectTable();
+  renderDefectTable();
+  updateProgress();
 }
 
 // ════════════════ 區塊快速跳轉 ════════════════
@@ -2518,7 +2572,7 @@ function addOtherWorkRow(block, floor, item, desc, qty, unit) {
   row.innerHTML = `
     <select id="ow-block-${idx}" data-label="棟別">${buildOpts(settings.blocks||[], block, '棟別')}</select>
     <select id="ow-floor-${idx}" data-label="樓層">${buildOpts(settings.floors||[], floor, '樓層')}</select>
-    <select id="ow-item-${idx}" data-label="工項">${buildOpts(settings.workTypes||DEFAULT_WORK_TYPES, item, '工項')}</select>
+    <select id="ow-item-${idx}" data-label="工項" onchange="applyWorkTypeUnit(${idx})">${buildOpts(settings.workTypes||DEFAULT_WORK_TYPES, item, '工項')}</select>
     <input type="text" id="ow-desc-${idx}" data-label="完成說明" placeholder="例：東側放樣完成、水槽第3層安裝…" value="${desc||''}" style="width:100%;">
     <input type="number" id="ow-qty-${idx}" data-label="數量" placeholder="數量" min="0" value="${qty||''}" style="width:100%;font-variant-numeric:tabular-nums;">
     <select id="ow-unit-${idx}" data-label="單位">${buildOpts(settings.workUnits||DEFAULT_WORK_UNITS, unit, '單位')}</select>
@@ -2530,6 +2584,26 @@ function addOtherWorkRow(block, floor, item, desc, qty, unit) {
 function removeOtherWorkRow(idx) {
   const el = document.getElementById('ow-row-'+idx);
   if (el) el.remove();
+}
+
+// 選了工項時，自動帶出該工項的預設單位（單位若已有值就不覆蓋，尊重使用者手動選擇）
+function applyWorkTypeUnit(idx) {
+  const itemEl = document.getElementById('ow-item-'+idx);
+  const unitEl = document.getElementById('ow-unit-'+idx);
+  if (!itemEl || !unitEl) return;
+  const map = settings.workTypeUnit || DEFAULT_WORK_TYPE_UNIT;
+  const defUnit = map[itemEl.value];
+  if (!defUnit) return;
+  // 只有單位還沒選時才自動帶（避免蓋掉使用者已改的）
+  if (!unitEl.value) {
+    // 若預設單位不在單位清單裡，先補進 option
+    if (![...unitEl.options].some(o => o.value === defUnit)) {
+      const o = document.createElement('option');
+      o.value = defUnit; o.textContent = defUnit;
+      unitEl.appendChild(o);
+    }
+    unitEl.value = defUnit;
+  }
 }
 
 function getOtherWorkData() {
@@ -4398,11 +4472,25 @@ function removeLaborUnit(idx) {
 function renderWorkTypeList() {
   const list = document.getElementById('work-type-list');
   if (!list) return;
-  list.innerHTML = (settings.workTypes||[]).map((v,i) => `
-    <div style="display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:13px;">
-      <span>${v}</span>
-      <button style="border:none;background:transparent;cursor:pointer;color:var(--danger);font-size:12px;padding:0 2px;" onclick="removeWorkType(${i})">✕</button>
-    </div>`).join('') || '<div style="font-size:13px;color:var(--muted);">尚無工種，請新增。</div>';
+  if (!settings.workTypeUnit) settings.workTypeUnit = {};
+  const units = settings.workUnits || DEFAULT_WORK_UNITS;
+  list.innerHTML = (settings.workTypes||[]).map((v,i) => {
+    const cur = settings.workTypeUnit[v] || '';
+    const opts = '<option value="">預設單位</option>' + units.map(function(u){ return '<option'+(u===cur?' selected':'')+'>'+u+'</option>'; }).join('');
+    return `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+      <span style="flex:1;font-size:13px;font-weight:600;">${v}</span>
+      <select onchange="setWorkTypeUnit('${v.replace(/'/g,"\\'")}', this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;">${opts}</select>
+      <button style="border:none;background:transparent;cursor:pointer;color:var(--danger);font-size:13px;padding:0 4px;" onclick="removeWorkType(${i})" title="刪除">✕</button>
+    </div>`;
+  }).join('') || '<div style="font-size:13px;color:var(--muted);">尚無工種，請新增。</div>';
+}
+function setWorkTypeUnit(workType, unit) {
+  if (!settings.workTypeUnit) settings.workTypeUnit = {};
+  if (unit) settings.workTypeUnit[workType] = unit;
+  else delete settings.workTypeUnit[workType];
+  persistSettings();
+  showToast('已設定「' + workType + '」預設單位：' + (unit || '（無）'));
 }
 function addWorkType() {
   const input = document.getElementById('cfg-new-work-type');
