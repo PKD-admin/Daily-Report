@@ -2278,6 +2278,7 @@ function enterEditMode() {
   // 手機底部按鈕
   _setDisp('m-btn-enter-edit','none'); _setDisp('m-btn-save',''); _setDisp('m-btn-lock','');
   _setDisp('m-btn-clear','');
+  updateSaveButtonState(); // 確保儲存鈕文字/狀態正確
 }
 
 function enterViewMode() {
@@ -2935,6 +2936,26 @@ function copyDriveLink() {
 
 // ════════════════ Save Report ════════════════
 let isSaving = false;
+
+// 依「照片上傳中數量」更新儲存按鈕狀態（桌機 + 手機）
+function updateSaveButtonState() {
+  var uploading = (typeof photoUploadsInFlight === 'number') ? photoUploadsInFlight : 0;
+  ['btn-save', 'm-btn-save'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    if (uploading > 0) {
+      btn.disabled = true;
+      btn.style.opacity = '0.55';
+      btn.style.cursor = 'not-allowed';
+      btn.textContent = '⏳ 照片上傳中… ' + uploading + ' 張';
+    } else {
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.textContent = '💾 儲存日報表';
+    }
+  });
+}
 function saveReport() {
   if (!isEditMode) { showToast('請先進入編輯模式才能儲存'); return; }
   if (isSaving) { showToast('儲存中，請稍候…'); return; }
@@ -5032,6 +5053,7 @@ function uploadPhoto(file) {
   statusEl.style.display = 'block';
   statusEl.textContent = '⏳ 上傳中：' + file.name + '（請稍候…）';
   photoUploadsInFlight++;
+  updateSaveButtonState();
 
   compressImage(file, 1200, 0.8, function(b64, mimeType) {
     fetch(GAS_URL, {
@@ -5041,6 +5063,7 @@ function uploadPhoto(file) {
       .then(function(r) { return r.json(); })
       .then(function(res) {
         photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+        updateSaveButtonState();
         if (res.ok) {
           uploadedPhotos.push({ fileName: res.fileName, thumbUrl: res.thumbUrl, viewUrl: res.viewUrl });
           renderPhotoGrid();
@@ -5052,6 +5075,7 @@ function uploadPhoto(file) {
       })
       .catch(function() {
         photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+        updateSaveButtonState();
         statusEl.textContent = '⚠ 網路錯誤，請重試';
       });
   });
@@ -5143,6 +5167,7 @@ function uploadDefectPhoto(fileOrList, seq, obj) {
 
   files.forEach(function(file) {
     photoUploadsInFlight++;
+    updateSaveButtonState();
     compressImage(file, 1200, 0.8, function(b64, mimeType) {
       fetch(GAS_URL, {
         method: 'POST',
@@ -5151,6 +5176,7 @@ function uploadDefectPhoto(fileOrList, seq, obj) {
         .then(function(r) { return r.json(); })
         .then(function(res) {
           done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          updateSaveButtonState();
           if (res.ok) {
             obj.photos.push({ url: res.viewUrl, thumb: res.thumbUrl, fileName: res.fileName });
           }
@@ -5163,6 +5189,7 @@ function uploadDefectPhoto(fileOrList, seq, obj) {
         })
         .catch(function() {
           done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          updateSaveButtonState();
           if (statusEl) statusEl.textContent='⚠ 部分照片上傳失敗，請重試';
         });
     });
@@ -5225,6 +5252,7 @@ function uploadIssuesPhoto(fileList) {
 
   files.forEach(function(file) {
     photoUploadsInFlight++;
+    updateSaveButtonState();
     compressImage(file, 1200, 0.8, function(b64, mimeType) {
       fetch(GAS_URL, {
         method: 'POST',
@@ -5233,6 +5261,7 @@ function uploadIssuesPhoto(fileList) {
         .then(function(r) { return r.json(); })
         .then(function(res) {
           done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          updateSaveButtonState();
           if (res.ok) issuesPhotos.push({ url: res.viewUrl, thumb: res.thumbUrl, fileName: res.fileName });
           renderIssuesPhotoGrid();
           if (statusEl) {
@@ -5242,6 +5271,7 @@ function uploadIssuesPhoto(fileList) {
         })
         .catch(function() {
           done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          updateSaveButtonState();
           if (statusEl) statusEl.textContent='⚠ 部分照片上傳失敗，請重試';
         });
     });
