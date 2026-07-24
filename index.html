@@ -3139,24 +3139,26 @@ function printReport() {
     var p = document.getElementById('prog-panel-'+r.id);
     var q = document.getElementById('prog-qty-'+r.id);
     if (!b) return;
-    progressHtml += '<tr><td>'+(b.value||'—')+'</td><td>'+(d.value||'—')+'</td><td>'+(f.value||'—')+'</td><td>'+(s.value||'—')+'</td><td>'+(p.value||'—')+'</td><td style="text-align:right;font-variant-numeric:tabular-nums;">'+(q.value||'0')+'</td></tr>';
+    if (!(b.value||s.value||q.value)) return; // 過濾空白列
+    progressHtml += '<tr><td>'+(b.value||'—')+'</td><td>'+(d.value||'—')+'</td><td>'+(f.value||'—')+'</td><td>'+(s.value||'—')+'</td><td>'+(p.value||'—')+'</td><td>'+(q.value||'0')+'</td></tr>';
   });
-  if (!progressHtml) progressHtml = '<tr><td colspan="6" style="text-align:center;color:#999;">無記錄</td></tr>';
+  if (!progressHtml) progressHtml = '<tr><td colspan="6" style="color:#999;">無記錄</td></tr>';
 
-  // 其他工項
+  // 其他工項（過濾全空白列）
   var otherWorkHtml = '';
-  getOtherWorkData().forEach(function(w) {
-    otherWorkHtml += '<tr><td>'+(w.block||'—')+'</td><td>'+(w.floor||'—')+'</td><td>'+(w.item||'—')+'</td><td>'+(w.desc||'—')+'</td><td style="text-align:right;font-variant-numeric:tabular-nums;">'+(w.qty||'—')+'</td><td>'+(w.unit||'—')+'</td></tr>';
+  getOtherWorkData().filter(function(w){ return (w.item||'').trim() || (w.desc||'').trim() || (w.qty||'').trim(); }).forEach(function(w) {
+    otherWorkHtml += '<tr><td>'+(w.block||'—')+'</td><td>'+(w.floor||'—')+'</td><td>'+(w.item||'—')+'</td><td class="txt">'+esc(w.desc||'—')+'</td><td>'+(w.qty||'—')+'</td><td>'+(w.unit||'—')+'</td></tr>';
   });
-  if (!otherWorkHtml) otherWorkHtml = '<tr><td colspan="6" style="text-align:center;color:#999;">無記錄</td></tr>';
+  if (!otherWorkHtml) otherWorkHtml = '<tr><td colspan="6" style="color:#999;">無記錄</td></tr>';
 
   // 機具設備
   var equipData = getEquipmentData();
   var equipHtml = '';
   equipData.forEach(function(e) {
-    equipHtml += '<tr><td>'+(e.type||'—')+'</td><td>'+(e.unit||'—')+'</td><td style="text-align:center;">'+(e.qty||'0')+'</td><td style="text-align:center;">'+(e.shift||'—')+'</td><td>'+(e.purpose||'—')+'</td><td>'+(e.location||'—')+'</td></tr>';
+    if (!(e.type||'').trim()) return; // 過濾空白列
+    equipHtml += '<tr><td class="txt">'+esc(e.type||'—')+'</td><td>'+(e.unit||'—')+'</td><td>'+(e.qty||'0')+'</td><td>'+(e.shift||'—')+'</td><td class="txt">'+esc(e.purpose||'—')+'</td><td>'+(e.location||'—')+'</td></tr>';
   });
-  if (!equipHtml) equipHtml = '<tr><td colspan="6" style="text-align:center;color:#999;">無記錄</td></tr>';
+  if (!equipHtml) equipHtml = '<tr><td colspan="6" style="color:#999;">無記錄</td></tr>';
 
   // 材料進場
   var matHtml = '';
@@ -3167,74 +3169,83 @@ function printReport() {
     var l  = document.getElementById('mat-location-'+r.id);
     var n  = document.getElementById('mat-next-'+r.id);
     if (!t) return;
-    matHtml += '<tr><td>'+(t.value||'—')+'</td><td style="text-align:right;">'+(q.value||'0')+'</td><td>'+(rc.value||'—')+'</td><td>'+(l.value||'—')+'</td><td>'+(n.value||'—')+'</td></tr>';
+    if (!(t.value||'').trim() && !(q.value||'').trim()) return; // 過濾空白列
+    matHtml += '<tr><td>'+(t.value||'—')+'</td><td>'+(q.value||'0')+'</td><td>'+(rc.value||'—')+'</td><td>'+(l.value||'—')+'</td><td>'+(n.value||'—')+'</td></tr>';
   });
-  if (!matHtml) matHtml = '<tr><td colspan="5" style="text-align:center;color:#999;">無記錄</td></tr>';
+  if (!matHtml) matHtml = '<tr><td colspan="5" style="color:#999;">無記錄</td></tr>';
 
-  // 查驗清單
+  // 查驗清單（過濾空白列）
   var inspectHtml = '';
-  inspections.forEach(function(item, i) {
-    inspectHtml += '<tr><td style="text-align:center;">'+(i+1)+'</td><td>'+(item.item||'—')+'</td><td style="text-align:center;">'+(item.result||'—')+'</td><td>'+(item.note||'')+'</td></tr>';
+  var _insLine = 0;
+  inspections.filter(function(x){ return (x.item||'').trim() || (x.note||'').trim(); }).forEach(function(item) {
+    _insLine++;
+    inspectHtml += '<tr><td>'+_insLine+'</td><td class="txt">'+esc(item.item||'—')+'</td><td>'+(item.result||'—')+'</td><td class="txt">'+esc(item.note||'')+'</td></tr>';
   });
-  if (!inspectHtml) inspectHtml = '<tr><td colspan="4" style="text-align:center;color:#999;">無記錄</td></tr>';
+  if (!inspectHtml) inspectHtml = '<tr><td colspan="4" style="color:#999;">無記錄</td></tr>';
 
-  // 缺失清單
+  // 缺失清單（過濾空白列）
   var defectHtml = '';
-  defects.forEach(function(d, i) {
+  var _defLine = 0;
+  defects.filter(function(d){ return (d.desc||'').trim() || getDefectPhotos(d).length; }).forEach(function(d) {
+    _defLine++;
     var dp = getDefectPhotos(d);
     var photoCell = dp.length
-      ? dp.map(function(p){ return '<img src="'+p.thumb+'" style="width:44px;height:44px;object-fit:cover;border-radius:3px;border:1px solid #e2e8f0;margin:1px;" crossorigin="anonymous">'; }).join('')
+      ? dp.map(function(p){ return '<img src="'+p.thumb+'" style="width:42px;height:42px;object-fit:cover;border-radius:3px;border:1px solid #000;margin:1px;" crossorigin="anonymous">'; }).join('')
       : '—';
-    defectHtml += '<tr><td style="text-align:center;">'+(i+1)+'</td><td>'+(d.desc||'—')+'</td><td>'+(d.cat||d.category||'—')+'</td><td>'+(d.block||'—')+'</td><td>'+(d.dir||'—')+'</td><td>'+(d.floor||'—')+'</td><td style="text-align:center;">'+(d.status||'—')+'</td><td style="text-align:center;">'+photoCell+'</td></tr>';
+    defectHtml += '<tr><td>'+_defLine+'</td><td class="txt">'+esc(d.desc||'—')+'</td><td>'+(d.cat||d.category||'—')+'</td><td>'+(d.block||'—')+'</td><td>'+(d.dir||'—')+'</td><td>'+(d.floor||'—')+'</td><td>'+(d.status||'—')+'</td><td>'+photoCell+'</td></tr>';
   });
-  if (!defectHtml) defectHtml = '<tr><td colspan="8" style="text-align:center;color:#999;">無記錄</td></tr>';
+  if (!defectHtml) defectHtml = '<tr><td colspan="8" style="color:#999;">無記錄</td></tr>';
 
-  // 施工照片
+  // 施工照片（一排 3 張，較大好看）
   var photosHtml = '';
   if (uploadedPhotos.length > 0) {
-    photosHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;">';
+    photosHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px;">';
     uploadedPhotos.forEach(function(p) {
-      photosHtml += '<div style="break-inside:avoid;"><img src="'+p.thumbUrl+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0;" crossorigin="anonymous"><div style="font-size:9px;color:#666;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.fileName+'</div></div>';
+      photosHtml += '<div style="break-inside:avoid;"><img class="pf-img" src="'+p.thumbUrl+'" crossorigin="anonymous"><div style="font-size:9px;color:#000;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p.fileName||'')+'</div></div>';
     });
     photosHtml += '</div>';
   } else {
-    photosHtml = '<p style="color:#999;font-size:12px;">無照片</p>';
+    photosHtml = '<p style="color:#999;font-size:11px;">無照片</p>';
   }
 
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 
   var html = '<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><title>工地日報表 '+date+'</title><style>';
   html += '*{box-sizing:border-box;margin:0;padding:0;}';
-  html += 'body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:11px;color:#1a202c;background:#fff;padding:0;}';
-  html += '@page{size:A4;margin:15mm 12mm 15mm 12mm;}';
-  html += '.page{width:100%;padding:0;}';
-  html += 'h1{font-size:15px;font-weight:800;letter-spacing:0.05em;color:#1a202c;}';
-  html += '.subtitle{font-size:11px;color:#4a5568;margin-top:2px;}';
-  html += '.header{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2.5px solid #1a365d;padding-bottom:8px;margin-bottom:12px;}';
-  html += '.header-left{}';
-  html += '.header-right{text-align:right;font-size:10px;color:#4a5568;line-height:1.8;}';
-  html += 'section{margin-bottom:12px;break-inside:avoid;}';
-  html += 'section.allow-break{break-inside:auto;}';
-  html += '.sec-title{font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#2b6cb0;border-left:3px solid #2b6cb0;padding-left:6px;margin-bottom:6px;}';
-  html += 'table{width:100%;border-collapse:collapse;font-size:10px;}';
-  html += 'th{background:#ebf4ff;color:#2c5282;font-weight:700;padding:4px 6px;border:1px solid #bee3f8;font-size:9px;letter-spacing:0.04em;}';
-  html += 'td{padding:4px 6px;border:1px solid #e2e8f0;vertical-align:top;}';
-  html += 'tr:nth-child(even) td{background:#f7fafc;}';
-  html += '.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}';
-  html += '.info-item{padding:5px 8px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;}';
-  html += '.info-label{font-size:9px;color:#718096;font-weight:600;letter-spacing:0.04em;margin-bottom:2px;}';
-  html += '.info-val{font-size:11px;font-weight:600;color:#1a202c;}';
-  html += '.progress-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}';
-  html += '.progress-box{padding:6px 8px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;}';
-  html += '.progress-label{font-size:9px;color:#718096;margin-bottom:2px;}';
-  html += '.progress-val{font-size:13px;font-weight:800;color:#2b6cb0;font-variant-numeric:tabular-nums;}';
-  html += '.progress-pct{font-size:9px;color:#4a5568;margin-top:1px;}';
-  html += '.note-box{background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;padding:6px 10px;font-size:10px;line-height:1.6;min-height:28px;white-space:pre-wrap;}';
-  html += '.col2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}';
-  html += '.weather-tag{display:inline-block;padding:2px 8px;background:#ebf8ff;color:#2b6cb0;border-radius:10px;font-weight:700;font-size:11px;}';
-  html += '.footer{border-top:1px solid #e2e8f0;padding-top:8px;margin-top:12px;display:flex;justify-content:space-between;font-size:9px;color:#718096;}';
-  html += '.sig-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px;}';
-  html += '.sig-box{border-top:1px solid #1a202c;padding-top:4px;text-align:center;font-size:9px;color:#4a5568;}';
+  // A4 直向；可用寬度約 186mm。黑白列印友善：全部灰階、無彩色。
+  html += '@page{size:A4 portrait;margin:14mm 12mm;}';
+  html += 'html,body{width:100%;}';
+  html += 'body{font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;font-size:12px;color:#000;background:#fff;line-height:1.5;}';
+  html += '.page{width:100%;max-width:186mm;margin:0 auto;}';
+  html += 'h1{font-size:19px;font-weight:800;letter-spacing:0.04em;color:#000;}';
+  html += '.subtitle{font-size:13px;color:#000;margin-top:4px;}';
+  html += '.header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:2.5px solid #000;padding-bottom:10px;margin-bottom:18px;}';
+  html += '.header-right{text-align:right;font-size:11px;color:#000;line-height:1.9;white-space:nowrap;}';
+  html += 'section{margin-bottom:18px;break-inside:avoid;}';
+  html += '.sec-title{font-size:13px;font-weight:800;letter-spacing:0.06em;color:#000;border-left:4px solid #000;padding-left:9px;margin-bottom:8px;}';
+  // 表格：固定版面 + 自動換行，絕不超出頁寬；灰階配色
+  html += 'table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;margin:0;}';
+  // 表頭：不靠底色，用粗框線+粗體字，即使沒勾「背景圖形」也清楚
+  html += 'th{background:transparent;color:#000;font-weight:800;padding:7px 6px;border:1px solid #000;border-bottom:2px solid #000;font-size:10.5px;text-align:center;}';
+  html += 'td{padding:7px 6px;border:1px solid #000;vertical-align:middle;text-align:center;word-break:break-word;overflow-wrap:break-word;color:#000;}';
+  html += 'td.txt{text-align:left;}';
+  html += '.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}';
+  html += '.info-item{padding:8px 11px;border:1px solid #000;border-radius:3px;}';
+  html += '.info-label{font-size:10px;color:#000;font-weight:600;margin-bottom:3px;}';
+  html += '.info-val{font-size:13px;font-weight:700;color:#000;}';
+  html += '.progress-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}';
+  html += '.progress-box{padding:9px 11px;border:1px solid #000;border-radius:3px;}';
+  html += '.progress-label{font-size:10px;color:#000;margin-bottom:3px;}';
+  html += '.progress-val{font-size:16px;font-weight:800;color:#000;}';
+  html += '.progress-pct{font-size:10px;color:#000;margin-top:2px;}';
+  html += '.note-box{border:1px solid #000;border-radius:3px;padding:9px 12px;font-size:12px;line-height:1.6;min-height:34px;white-space:pre-wrap;word-break:break-word;color:#000;}';
+  html += '.note-label{font-size:10.5px;font-weight:700;color:#000;margin-bottom:4px;}';
+  html += '.col2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}';
+  html += '.weather-tag{display:inline-block;padding:3px 12px;border:1.5px solid #000;border-radius:12px;font-weight:700;font-size:12px;color:#000;}';
+  html += '.pf-img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid #000;}';
+  html += '.sig-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-top:28px;padding-top:6px;}';
+  html += '.sig-box{border-top:1.5px solid #000;padding-top:7px;text-align:center;font-size:11px;color:#000;min-height:44px;}';
+  html += '.footer{border-top:1px solid #000;padding-top:8px;margin-top:20px;display:flex;justify-content:space-between;font-size:10px;color:#000;}';
   html += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}';
   html += '</style></head><body><div class="page">';
 
@@ -3257,17 +3268,20 @@ function printReport() {
 
   // 工班出勤
   html += '<section class="allow-break"><div class="sec-title">工班出勤（今日合計：'+esc(workerTotal)+' 人）</div>';
-  html += '<table><thead><tr><th>勞務單位</th><th>人數</th><th>工種</th><th>區域</th><th>樓層</th></tr></thead><tbody>'+workerHtml+'</tbody></table></section>';
+  html += '<table><colgroup><col style="width:32%"><col style="width:12%"><col style="width:22%"><col style="width:17%"><col style="width:17%"></colgroup>';
+  html += '<thead><tr><th>勞務單位</th><th>人數</th><th>工種</th><th>區域</th><th>樓層</th></tr></thead><tbody>'+workerHtml+'</tbody></table></section>';
 
   // 今日施工進度（面板安裝）
   html += '<section class="allow-break"><div class="sec-title">面板安裝進度（計面積）</div>';
-  html += '<table><thead><tr><th>棟別</th><th>區域</th><th>樓層</th><th>系統</th><th>板片類型</th><th>今日安裝數量</th></tr></thead><tbody>'+progressHtml+'</tbody></table></section>';
+  html += '<table><colgroup><col style="width:14%"><col style="width:12%"><col style="width:14%"><col style="width:18%"><col style="width:24%"><col style="width:18%"></colgroup>';
+  html += '<thead><tr><th>棟別</th><th>區域</th><th>樓層</th><th>系統</th><th>板片類型</th><th>今日安裝數量</th></tr></thead><tbody>'+progressHtml+'</tbody></table></section>';
 
   // 其他工項
   html += '<section class="allow-break"><div class="sec-title">其他工項紀錄</div>';
-  html += '<table><thead><tr><th>棟別</th><th>樓層</th><th>工項</th><th>完成說明</th><th>數量</th><th>單位</th></tr></thead><tbody>'+otherWorkHtml+'</tbody></table>';
+  html += '<table><colgroup><col style="width:12%"><col style="width:12%"><col style="width:18%"><col style="width:36%"><col style="width:12%"><col style="width:10%"></colgroup>';
+  html += '<thead><tr><th>棟別</th><th>樓層</th><th>工項</th><th>完成說明</th><th>數量</th><th>單位</th></tr></thead><tbody>'+otherWorkHtml+'</tbody></table>';
   if (tomorrowPlan && tomorrowPlan !== '—') {
-    html += '<div style="margin-top:6px;"><span style="font-size:9px;font-weight:700;color:#718096;letter-spacing:0.04em;">明日預計施工計畫</span><div class="note-box" style="margin-top:3px;">'+esc(tomorrowPlan)+'</div></div>';
+    html += '<div style="margin-top:10px;"><div class="note-label">明日預計施工計畫</div><div class="note-box">'+esc(tomorrowPlan)+'</div></div>';
   }
   html += '</section>';
 
@@ -3281,26 +3295,30 @@ function printReport() {
 
   // 機具設備
   html += '<section class="allow-break"><div class="sec-title">機具設備</div>';
-  html += '<table><thead><tr><th>設備名稱</th><th>廠商/單位</th><th>數量</th><th>工班</th><th>用途</th><th>存放位置</th></tr></thead><tbody>'+equipHtml+'</tbody></table></section>';
+  html += '<table><colgroup><col style="width:22%"><col style="width:18%"><col style="width:10%"><col style="width:14%"><col style="width:18%"><col style="width:18%"></colgroup>';
+  html += '<thead><tr><th>設備名稱</th><th>廠商/單位</th><th>數量</th><th>工班</th><th>用途</th><th>存放位置</th></tr></thead><tbody>'+equipHtml+'</tbody></table></section>';
 
   // 材料進場
   html += '<section class="allow-break"><div class="sec-title">材料進場紀錄</div>';
-  html += '<table><thead><tr><th>材料種類</th><th>數量</th><th>收料人員</th><th>儲存位置</th><th>下次進料</th></tr></thead><tbody>'+matHtml+'</tbody></table>';
-  if (materialNote) html += '<div style="margin-top:5px;"><span style="font-size:9px;font-weight:700;color:#718096;">材料備註</span><div class="note-box" style="margin-top:3px;">'+esc(materialNote)+'</div></div>';
+  html += '<table><colgroup><col style="width:22%"><col style="width:16%"><col style="width:20%"><col style="width:22%"><col style="width:20%"></colgroup>';
+  html += '<thead><tr><th>材料種類</th><th>數量</th><th>收料人員</th><th>儲存位置</th><th>下次進料</th></tr></thead><tbody>'+matHtml+'</tbody></table>';
+  if (materialNote) html += '<div style="margin-top:10px;"><div class="note-label">材料備註</div><div class="note-box">'+esc(materialNote)+'</div></div>';
   html += '</section>';
 
   // 品質查驗
   html += '<section class="allow-break"><div class="sec-title">查驗清單</div>';
-  html += '<table><thead><tr><th style="width:24px;">#</th><th>查驗項目</th><th style="width:80px;">查驗結果</th><th>備註</th></tr></thead><tbody>'+inspectHtml+'</tbody></table></section>';
+  html += '<table><colgroup><col style="width:6%"><col style="width:40%"><col style="width:16%"><col style="width:38%"></colgroup>';
+  html += '<thead><tr><th>#</th><th>查驗項目</th><th>查驗結果</th><th>備註</th></tr></thead><tbody>'+inspectHtml+'</tbody></table></section>';
 
   // 缺失清單
   html += '<section class="allow-break"><div class="sec-title">缺失清單</div>';
-  html += '<table><thead><tr><th style="width:24px;">#</th><th>缺失描述</th><th>類別</th><th>棟別</th><th>區域</th><th>樓層</th><th>狀態</th><th>照片</th></tr></thead><tbody>'+defectHtml+'</tbody></table></section>';
+  html += '<table><colgroup><col style="width:5%"><col style="width:30%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:13%"></colgroup>';
+  html += '<thead><tr><th>#</th><th>缺失描述</th><th>類別</th><th>棟別</th><th>區域</th><th>樓層</th><th>狀態</th><th>照片</th></tr></thead><tbody>'+defectHtml+'</tbody></table></section>';
 
   // 施工照片
   html += '<section class="allow-break"><div class="sec-title">施工照片</div>';
   html += photosHtml;
-  if (photoNote) html += '<div style="margin-top:6px;"><span style="font-size:9px;font-weight:700;color:#718096;">照片說明</span><div class="note-box" style="margin-top:3px;">'+esc(photoNote)+'</div></div>';
+  if (photoNote) html += '<div style="margin-top:10px;"><div class="note-label">照片說明</div><div class="note-box">'+esc(photoNote)+'</div></div>';
   html += '</section>';
 
   // 工地問題與備註
