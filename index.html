@@ -2007,6 +2007,10 @@ function init() {
     addEquipmentRow();
   }
 
+  // 查驗清單、缺失清單預設各補一列（若尚未有列），避免填表人沒注意到而漏填
+  if (!inspections.length) addInspectRow();
+  if (!defects.length) addDefectRow();
+
   startDraftTimer();
   // 開啟時從雲端同步（背景執行，不阻塞介面）
   syncFromCloud();
@@ -2102,20 +2106,28 @@ function restoreDraft(draft) {
     document.getElementById('progress-rows').innerHTML = '';
     progressRows = [];
     draft.progressRows.forEach(r => addProgressRow(r.block, r.dir, r.floor, r.sys, r.panelType, r.qty));
+  } else {
+    addProgressRow(); // 沒有進度資料仍保留一列空白引導
   }
   // 其他工項
   if (draft.otherWork && draft.otherWork.length) {
     loadOtherWorkRows(draft.otherWork);
+  } else {
+    addOtherWorkRow(); // 沒有其他工項仍保留一列空白引導
   }
   // 工班
   if (draft.workerRows && draft.workerRows.length) {
     loadWorkerRows(draft.workerRows);
+  } else {
+    addWorkerRow(); // 沒有工班仍保留一列空白引導
   }
   // 材料
   if (draft.materialRows && draft.materialRows.length) {
     document.getElementById('material-rows').innerHTML = '';
     materialRows = [];
     draft.materialRows.forEach(r => addMaterialRow(r.type, r.qty, r.receiver, r.location, r.nextDate));
+  } else {
+    addMaterialRow(); // 沒有材料仍保留一列空白引導
   }
   // 機具設備
   if (draft.equipment && draft.equipment.length) {
@@ -2536,7 +2548,11 @@ function getOtherWorkData() {
 function loadOtherWorkRows(rows) {
   document.getElementById('otherwork-rows').innerHTML = '';
   otherWorkRows = [];
-  (rows||[]).forEach(r => addOtherWorkRow(r.block, r.floor, r.item, r.desc, r.qty, r.unit));
+  if (rows && rows.length) {
+    rows.forEach(r => addOtherWorkRow(r.block, r.floor, r.item, r.desc, r.qty, r.unit));
+  } else {
+    addOtherWorkRow(); // 沒有資料時仍保留一列空白引導
+  }
 }
 
 // ════════════════ Material Rows ════════════════
@@ -2659,13 +2675,15 @@ function removeInspect(seq) {
   renderInspectMobile();
 }
 
-function renderInspectTable() {
+function renderInspectTable(keepEmpty) {
   inspections = [];
   inspectSeq  = 0;
   const tbody = document.getElementById('inspect-tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無查驗記錄，點擊「+ 新增查驗」</td></tr>';
   renderInspectMobile();
+  // 預設補一列空白，避免填表人沒注意到而漏填（keepEmpty=true 時不補，供載入資料前使用）
+  if (!keepEmpty) addInspectRow();
 }
 
 // ════════════════ Defects ════════════════
@@ -2799,13 +2817,15 @@ function removeDefect(seq) {
   renderDefectMobile();
 }
 
-function renderDefectTable() {
+function renderDefectTable(keepEmpty) {
   defects = [];
   defectSeq = 0;
   const tbody = document.getElementById('defect-tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">尚無缺失記錄，點擊「+ 新增缺失」</td></tr>';
   renderDefectMobile();
+  // 預設補一列空白（keepEmpty=true 時不補，供載入資料前使用）
+  if (!keepEmpty) addDefectRow();
 }
 
 // ════════════════ Progress ════════════════
@@ -3024,8 +3044,9 @@ function saveReport() {
     materialNote: document.getElementById('f-material-note').value,
     photos: JSON.parse(JSON.stringify(uploadedPhotos)),
     photoNote: document.getElementById('f-photo-note').value,
-    inspections: JSON.parse(JSON.stringify(inspections)),
-    defects: JSON.parse(JSON.stringify(defects)),
+    // 過濾掉完全空白的列（預設空列不存檔）
+    inspections: JSON.parse(JSON.stringify(inspections.filter(function(x){ return (x.item||'').trim() || (x.note||'').trim(); }))),
+    defects: JSON.parse(JSON.stringify(defects.filter(function(x){ return (x.desc||'').trim() || (getDefectPhotos(x).length > 0); }))),
     issues: document.getElementById('f-issues').value,
     issuesPhotos: JSON.parse(JSON.stringify(issuesPhotos)),
     safety: document.getElementById('f-safety').value,
@@ -3408,12 +3429,20 @@ function loadReport(date) {
   // 還原工地問題照片
   issuesPhotos = Array.isArray(r.issuesPhotos) ? r.issuesPhotos.slice() : [];
   renderIssuesPhotoGrid();
-  // 還原查驗清單
-  renderInspectTable();
-  (r.inspections || []).forEach(x => addInspectRow(x.item, x.result, x.note));
-  // 還原缺失清單（含照片）
-  renderDefectTable();
-  (r.defects || []).forEach(x => addDefectRow(x.desc, x.cat, x.block, x.dir, x.floor, x.status, getDefectPhotos(x)));
+  // 還原查驗清單（有資料載入資料，沒資料補一列空白）
+  renderInspectTable(true);
+  if (r.inspections && r.inspections.length) {
+    r.inspections.forEach(x => addInspectRow(x.item, x.result, x.note));
+  } else {
+    addInspectRow();
+  }
+  // 還原缺失清單（含照片；沒資料補一列空白）
+  renderDefectTable(true);
+  if (r.defects && r.defects.length) {
+    r.defects.forEach(x => addDefectRow(x.desc, x.cat, x.block, x.dir, x.floor, x.status, getDefectPhotos(x)));
+  } else {
+    addDefectRow();
+  }
   showView('daily');
   showToast('已載入 ' + date + ' 日報表');
 }
