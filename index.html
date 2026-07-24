@@ -136,6 +136,22 @@
     top: 0;
     z-index: 10;
   }
+
+  /* 檢視模式：日報表填寫區所有輸入元素唯讀外觀 */
+  #view-daily.view-mode input,
+  #view-daily.view-mode select,
+  #view-daily.view-mode textarea {
+    pointer-events: none;
+    opacity: 0.75;
+    background: var(--bg) !important;
+    cursor: default;
+  }
+  #view-daily.view-mode button:not(.photo-view-allow):not(.sec-tab) {
+    display: none !important;
+  }
+  #view-daily.view-mode .view-mode-banner {
+    display: flex !important;
+  }
   .topbar-title {
     font-size: 16px;
     font-weight: 700;
@@ -186,12 +202,49 @@
   .view { display: none; }
   .view.active { display: block; }
 
+  /* ── 快速跳轉標籤列 ── */
+  #section-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    gap: 6px;
+    padding: 10px 0;
+    margin-bottom: 12px;
+    background: var(--bg);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  #section-tabs::-webkit-scrollbar { height: 4px; }
+  #section-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .sec-tab {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .sec-tab:hover { border-color: var(--sky); color: var(--blue); }
+  .sec-tab.active {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+  }
+
   /* ── Cards ── */
   .card {
     background: var(--white);
     border: 1px solid var(--border);
     border-radius: 10px;
     margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(26,35,50,0.04), 0 1px 2px rgba(26,35,50,0.03);
   }
   .card-header {
     padding: 14px 20px;
@@ -200,6 +253,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    background: linear-gradient(to bottom, #FAFCFE, var(--white));
+    border-radius: 10px 10px 0 0;
   }
   .card-title {
     font-size: 17px;
@@ -208,6 +263,17 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    position: relative;
+    padding-left: 12px;
+  }
+  .card-title::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 4px; height: 18px;
+    background: var(--blue);
+    border-radius: 2px;
   }
   .card-title .icon { color: var(--blue); }
   .card-body { padding: 18px 20px; }
@@ -261,6 +327,10 @@
 
     /* ── 欄位標頭隱藏（卡片式不需要） ── */
     .col-header-row { display: none !important; }
+
+    /* 手機底部操作列顯示（僅日報表填寫頁 active 時） */
+    #mobile-actions { display: none !important; }
+    #view-daily.active ~ #mobile-actions { display: flex !important; }
 
     /* ── Card ── */
     .card { border-radius: 12px; margin-bottom: 12px; }
@@ -341,7 +411,7 @@
     .kpi-card .kpi-label { font-size: 15px; }
 
     /* ── 動態列卡片式（強制覆蓋 inline style grid） ── */
-    .worker-row, .progress-row, .equipment-row, .material-row {
+    .worker-row, .progress-row, .otherwork-row, .equipment-row, .material-row {
       display: flex !important;
       flex-direction: column !important;
       gap: 10px !important;
@@ -354,22 +424,38 @@
       width: 100%;
       box-sizing: border-box;
     }
-    .worker-row > *, .progress-row > *,
+    .worker-row > *, .progress-row > *, .otherwork-row > *,
     .equipment-row > *, .material-row > * {
       width: 100% !important;
       min-width: 0 !important;
     }
     .worker-row select, .worker-row input,
     .progress-row select, .progress-row input,
+    .otherwork-row select, .otherwork-row input,
     .equipment-row select, .equipment-row input,
     .material-row select, .material-row input {
       min-height: 54px !important;
       font-size: 18px !important;
       width: 100% !important;
     }
+    /* 進度列、工班列、其他工項列：手機上每個欄位前顯示標籤（用 data-label） */
+    .worker-row [data-label], .progress-row [data-label], .otherwork-row [data-label] {
+      position: relative;
+    }
+    .worker-row [data-label]::before,
+    .progress-row [data-label]::before,
+    .otherwork-row [data-label]::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 14px !important;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
     /* 刪除按鈕靠右縮小 */
-    .worker-row .btn-xs, .progress-row .btn-xs,
-    .equipment-row .btn-xs, .material-row .btn-xs {
+    .worker-row .btn-xs, .progress-row .btn-xs, .otherwork-row .btn-xs,
+    .equipment-row .btn-xs, .material-row .btn-xs,
+    .worker-row .btn-ghost, .progress-row .btn-ghost, .otherwork-row .btn-ghost {
       width: 54px !important;
       min-width: 54px !important;
       align-self: flex-end !important;
@@ -487,12 +573,12 @@
   /* ── Form ── */
   .field { display: flex; flex-direction: column; gap: 5px; }
   .field label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.03em;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.02em;
   }
-  .field label .req { color: var(--danger); margin-left: 2px; }
+  .field label .req { color: var(--danger); margin-left: 3px; font-weight: 800; }
 
   input[type="text"], input[type="number"], input[type="date"],
   textarea, select {
@@ -856,10 +942,12 @@
     </div>
     <div class="topbar-actions">
       <span id="draft-status" style="font-size:12px;color:var(--muted);white-space:nowrap;"></span>
-      <button class="btn btn-ghost desktop-only" style="font-size:12px;" onclick="syncFromCloud()" title="從 Google Sheets 拉取最新資料">☁ 同步</button>
-      <button class="btn btn-ghost desktop-only" onclick="clearForm()">🗑 清除</button>
-      <button class="btn btn-ghost desktop-only" onclick="window.print()">🖨 列印</button>
-      <button class="btn btn-primary" onclick="saveReport()">💾 儲存日報表</button>
+      <button id="btn-enter-edit" class="btn btn-primary" onclick="enterEditMode()" style="font-size:13px;">✏️ 進入編輯模式</button>
+      <button id="btn-lock" class="btn btn-ghost" onclick="enterViewMode()" style="font-size:13px;display:none;">🔒 鎖定</button>
+      <button id="btn-sync" class="btn btn-ghost desktop-only" style="font-size:12px;display:none;" onclick="syncFromCloud()" title="從 Google Sheets 拉取最新資料">☁ 同步</button>
+      <button id="btn-clear" class="btn btn-ghost desktop-only" style="display:none;" onclick="clearForm()">🗑 清除</button>
+      <button class="btn btn-ghost desktop-only" onclick="printReport()">🖨 列印 PDF</button>
+      <button id="btn-save" class="btn btn-primary" onclick="saveReport()" style="display:none;">💾 儲存日報表</button>
     </div>
   </div>
 
@@ -868,8 +956,26 @@
     <!-- ════ 日報表填寫 ════ -->
     <div class="view active" id="view-daily">
 
+      <!-- 快速跳轉標籤列 -->
+      <nav id="section-tabs">
+        <button type="button" class="sec-tab active" onclick="jumpToSection('sec-basic', this)">基本</button>
+        <button type="button" class="sec-tab" onclick="jumpToSection('sec-weather', this)">天氣工班</button>
+        <button type="button" class="sec-tab" onclick="jumpToSection('sec-progress', this)">進度</button>
+        <button type="button" class="sec-tab" onclick="jumpToSection('sec-equipment', this)">機具</button>
+        <button type="button" class="sec-tab" onclick="jumpToSection('sec-material', this)">材料</button>
+        <button type="button" class="sec-tab" onclick="jumpToSection('sec-defect', this)">缺失</button>
+        <button type="button" class="sec-tab" onclick="jumpToSection('sec-photo', this)">照片</button>
+        <button type="button" class="sec-tab" onclick="jumpToSection('sec-issue', this)">問題</button>
+      </nav>
+
+      <!-- 檢視模式提示橫幅 -->
+      <div class="view-mode-banner" style="display:none;align-items:center;gap:12px;background:#fff8e1;border:1px solid #f9a825;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7a5800;">
+        <span style="font-size:18px;">🔒</span>
+        <span style="flex:1;">目前為<strong>檢視模式</strong>，所有欄位唯讀，無法修改。如需填寫或更正，請按右上角「✏️ 進入編輯模式」。</span>
+      </div>
+
       <!-- 基本資訊 -->
-      <div class="card">
+      <div class="card" id="sec-basic">
         <div class="card-header">
           <div class="card-title"><span class="icon">🏗</span> 基本資訊</div>
         </div>
@@ -884,7 +990,7 @@
             </div>
             <div class="field">
               <label>工程名稱 <span class="req">*</span></label>
-              <select id="f-project">
+              <select id="f-project" onchange="applyProjectInfo()">
                 <option value="">請選擇工程名稱</option>
               </select>
             </div>
@@ -925,7 +1031,7 @@
       </div>
 
       <!-- 天氣與工班 -->
-      <div class="card">
+      <div class="card" id="sec-weather">
         <div class="card-header">
           <div class="card-title"><span class="icon">☀️</span> 天氣與工班</div>
         </div>
@@ -969,12 +1075,18 @@
 
       <!-- 施工進度 -->
       <!-- 今日施工進度 -->
-      <div class="card">
+      <div class="card" id="sec-progress">
         <div class="card-header">
           <div class="card-title"><span class="icon">📐</span> 今日施工進度</div>
-          <button id="btn-add-progress" class="btn btn-ghost" style="font-size:12px;">+ 新增區域</button>
         </div>
         <div class="card-body" id="progress-section-stick">
+
+          <!-- 面板安裝進度（計面積） -->
+          <div class="subsection-header">
+            <span class="subsection-label">面板安裝進度（計面積）</span>
+            <button id="btn-add-progress" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增區域</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">吊裝、安裝面板等可計面積的工項，數量會自動累加至下方累積進度。</div>
           <div class="col-header-row" style="display:grid;grid-template-columns:70px 70px 80px 100px 170px 110px 36px;gap:8px;margin-bottom:4px;align-items:center;">
             <span style="font-size:12px;font-weight:600;color:var(--muted);">棟別</span>
             <span style="font-size:12px;font-weight:600;color:var(--muted);">區域</span>
@@ -989,6 +1101,24 @@
             <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">今日小計（依系統）</div>
             <div id="progress-subtotal-rows" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
           </div>
+
+          <!-- 其他工項紀錄（不計面積） -->
+          <div class="subsection-header" style="margin-top:24px;">
+            <span class="subsection-label">其他工項紀錄（不計面積）</span>
+            <button id="btn-add-otherwork" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增工項</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">放樣、預埋、水槽、固定件、打膠等非面積工項，記錄工序完成情況，不計入累積面積。</div>
+          <div class="col-header-row" style="display:grid;grid-template-columns:70px 80px 100px 1fr 80px 80px 36px;gap:8px;margin-bottom:4px;align-items:center;">
+            <span style="font-size:12px;font-weight:600;color:var(--muted);">棟別</span>
+            <span style="font-size:12px;font-weight:600;color:var(--muted);">樓層</span>
+            <span style="font-size:12px;font-weight:600;color:var(--muted);">工項</span>
+            <span style="font-size:12px;font-weight:600;color:var(--muted);">完成說明</span>
+            <span style="font-size:12px;font-weight:600;color:var(--muted);">數量</span>
+            <span style="font-size:12px;font-weight:600;color:var(--muted);">單位</span>
+            <span></span>
+          </div>
+          <div id="otherwork-rows"></div>
+
           <div style="margin-top:14px;" class="field">
             <label>明日預計施工計畫</label>
             <textarea id="f-tomorrow-plan" placeholder="說明明日預計完成之區域、數量或項目…"></textarea>
@@ -1002,6 +1132,7 @@
           <div class="card-title"><span class="icon">📊</span> 累積進度</div>
         </div>
         <div class="card-body">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">系統自動加總所有日報表的安裝數量，計算合約完成率。僅「單元」與「直橫料」計入累積；雨遮、風除室、門窗等其他系統僅顯示於當日小計，不併入合約百分比。</div>
           <div style="display:grid;grid-template-columns:1fr 130px 130px;gap:8px;margin-bottom:6px;align-items:center;">
             <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">系統</span>
             <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">累積完成面積（m²）</span>
@@ -1041,7 +1172,7 @@
       </div>
 
       <!-- 機具設備 -->
-      <div class="card">
+      <div class="card" id="sec-equipment">
         <div class="card-header">
           <div class="card-title"><span class="icon">🏗️</span> 機具設備</div>
           <button id="btn-add-equipment" class="btn btn-ghost" style="font-size:12px;">+ 新增設備</button>
@@ -1061,7 +1192,7 @@
       </div>
 
       <!-- 材料進場 -->
-      <div class="card">
+      <div class="card" id="sec-material">
         <div class="card-header">
           <div class="card-title"><span class="icon">📦</span> 材料進場紀錄</div>
           <button id="btn-add-material" class="btn btn-ghost" style="font-size:12px;">+ 新增材料</button>
@@ -1084,7 +1215,7 @@
       </div>
 
       <!-- 品質查驗與缺失 -->
-      <div class="card">
+      <div class="card" id="sec-defect">
         <div class="card-header">
           <div class="card-title"><span class="icon">🔍</span> 品質查驗與缺失記錄</div>
         </div>
@@ -1117,6 +1248,7 @@
             <span class="subsection-label">缺失清單</span>
             <button id="btn-add-defect" class="btn btn-ghost subsection-btn" style="font-size:12px;">+ 新增缺失</button>
           </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">每筆缺失可上傳多張照片（不同角度／細部），每筆最多 6 張。</div>
           <div id="defect-photo-upload-status" style="display:none;font-size:14px;color:var(--muted);margin-bottom:8px;"></div>
           <div id="defect-list-mobile" style="display:none;"></div>
           <div class="table-wrap" id="defect-table-wrap">
@@ -1143,13 +1275,14 @@
       </div>
 
       <!-- 施工照片 -->
-      <div class="card">
+      <div class="card" id="sec-photo">
         <div class="card-header">
           <div class="card-title"><span class="icon">📷</span> 施工照片</div>
         </div>
         <div class="card-body">
           <!-- 隱藏的 file input -->
           <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">可上傳多張施工照片，無張數限制；一次選取大量照片時建議分批上傳，較穩定。</div>
           <!-- 上傳按鈕 -->
           <button class="btn btn-ghost" id="btn-add-photo" style="width:100%;min-height:54px;font-size:16px;border:2px dashed var(--border);margin-bottom:12px;">
             📷 新增照片（相機 / 相簿）
@@ -1167,7 +1300,7 @@
       </div>
 
       <!-- 工地問題與備註 -->
-      <div class="card">
+      <div class="card" id="sec-issue">
         <div class="card-header">
           <div class="card-title"><span class="icon">⚠️</span> 工地問題與備註</div>
         </div>
@@ -1186,11 +1319,33 @@
             <label>其他備註</label>
             <textarea id="f-remark" placeholder="其他值得記錄之事項…" style="min-height:52px;"></textarea>
           </div>
+
+          <!-- 工地問題照片 -->
+          <div class="field" style="margin-top:16px;">
+            <label>工地問題照片</label>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">可上傳與工地問題相關的照片，最多 6 張。</div>
+            <input type="file" id="issues-photo-input" accept="image/*" multiple style="display:none;">
+            <button class="btn btn-ghost" id="btn-add-issues-photo" style="width:100%;min-height:50px;font-size:15px;border:2px dashed var(--border);">📷 新增工地問題照片（可多張）</button>
+            <div id="issues-photo-status" style="display:none;font-size:14px;color:var(--muted);margin-top:8px;"></div>
+            <div id="issues-photo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:10px;"></div>
+          </div>
+
           <input type="hidden" id="f-drive-root">
         </div>
       </div>
 
     </div><!-- /view-daily -->
+
+    <!-- 手機版底部操作列（桌機隱藏，桌機用 topbar 按鈕；置於 view-daily 外以免受檢視模式隱藏規則影響）-->
+    <div id="mobile-actions" style="display:none;flex-direction:column;gap:10px;margin-top:8px;">
+      <button id="m-btn-enter-edit" class="btn btn-primary" onclick="enterEditMode()" style="width:100%;">✏️ 進入編輯模式</button>
+      <button id="m-btn-save"  class="btn btn-primary" onclick="saveReport()"  style="width:100%;display:none;">💾 儲存日報表</button>
+      <div style="display:flex;gap:10px;">
+        <button id="m-btn-print" class="btn btn-ghost" onclick="printReport()" style="flex:1;">🖨 列印 PDF</button>
+        <button id="m-btn-lock"  class="btn btn-ghost" onclick="enterViewMode()" style="flex:1;display:none;">🔒 鎖定</button>
+        <button id="m-btn-clear" class="btn btn-ghost" onclick="clearForm()" style="flex:1;display:none;color:var(--danger);">🗑 清除</button>
+      </div>
+    </div>
 
     <!-- ════ 日報表紀錄 ════ -->
     <div class="view" id="view-history">
@@ -1343,11 +1498,12 @@
                   <th style="width:64px;">區域</th>
                   <th style="width:64px;">樓層</th>
                   <th style="width:100px;">目前狀態</th>
+                  <th style="width:56px;">照片</th>
                   <th style="width:96px;">更新時間</th>
                 </tr>
               </thead>
               <tbody id="tracker-tbody">
-                <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">尚無缺失紀錄</td></tr>
+                <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">尚無缺失紀錄</td></tr>
               </tbody>
             </table>
           </div>
@@ -1443,7 +1599,7 @@
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><div class="card-title"><span class="icon">🏗</span> 工程名稱管理</div></div>
         <div class="card-body">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除工程名稱，將出現在日報表的工程名稱下拉選單中。</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除工程名稱。可為每個工程設定業主、總承包商、工地負責人與合約面積，日報表選擇工程名稱後會自動帶入這些資料。</div>
           <div style="display:flex;gap:8px;margin-bottom:12px;">
             <input type="text" id="cfg-new-project" placeholder="輸入新工程名稱…" style="flex:1;" onkeydown="if(event.key==='Enter')addProjectName()">
             <button class="btn btn-primary" onclick="addProjectName()">+ 新增</button>
@@ -1495,12 +1651,41 @@
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><div class="card-title"><span class="icon">👷</span> 工種管理</div></div>
         <div class="card-body">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除工種，將出現在工人出勤的工種下拉選單中。</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除工種，將出現在「工班出勤的工種」與「其他工項紀錄的工項」下拉選單中。</div>
           <div style="display:flex;gap:8px;margin-bottom:12px;">
             <input type="text" id="cfg-new-work-type" placeholder="輸入工種（例：放樣、吊裝）…" style="flex:1;" onkeydown="if(event.key==='Enter')addWorkType()">
             <button class="btn btn-primary" onclick="addWorkType()">+ 新增</button>
           </div>
           <div id="work-type-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 工項單位管理 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">📏</span> 工項單位管理</div></div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除單位，將出現在「其他工項紀錄」的單位下拉選單中（例：組、m、支、個、樓層）。</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input type="text" id="cfg-new-work-unit" placeholder="輸入單位（例：組、m、支）…" style="flex:1;" onkeydown="if(event.key==='Enter')addWorkUnit()">
+            <button class="btn btn-primary" onclick="addWorkUnit()">+ 新增</button>
+          </div>
+          <div id="work-unit-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 查驗項目管理 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">🔍</span> 查驗項目管理</div></div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">管理品質查驗的項目，依分組整理。可新增/刪除項目與分組，將出現在「品質查驗與缺失記錄」的查驗項目下拉選單中。</div>
+          <div id="inspect-items-groups" style="display:flex;flex-direction:column;gap:14px;margin-bottom:12px;"></div>
+          <div style="border-top:1px dashed var(--border);padding-top:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">新增分組</div>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="cfg-new-inspect-group" placeholder="輸入分組名稱（例：帷幕牆試水）…" style="flex:1;" onkeydown="if(event.key==='Enter')addInspectGroup()">
+              <button class="btn btn-primary" onclick="addInspectGroup()">+ 新增分組</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1661,7 +1846,7 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbx1MdJAuvNC9-WEXf9v51yREeOdq5KibbR1N0Zn8of4kk9sdBqObIuipuUk0gP3soa2/exec'; })();
+var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbwIGm1EQmRnWN8FK5OJKM12xx2gT96ANVVqiitJTi_Z5E8SU3tUnG7DJUCHqyLMFR-9/exec'; })();
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
   return `<option value="">${placeholder}</option>` +
@@ -1671,7 +1856,14 @@ let workerRows = [];
 let workerSeq = 0;
 const DEFAULT_FLOORS = ['1F','2F','3F','4F','5F','6F','7F','8F','9F','10F','11F','12F','13F','14F','15F','16F','17F','18F','19F','20F','21F','22F','23F','24F','25F','R1F','R2F','R3F','PRF'];
 const DEFAULT_SYSTEMS = ['單元','直橫料','雨遮','風除室','門窗'];
-const DEFAULT_WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','鋁板美容'];
+const DEFAULT_WORK_TYPES = ['放樣','預埋','預銲','吊裝','安裝','打膠','面板美容'];
+const DEFAULT_WORK_UNITS = ['組','m','支','個','樓層','式','處'];
+const DEFAULT_INSPECT_ITEMS = {
+  '預埋 / 放樣': ['預埋件位置確認','預埋件標高','放樣基準線','預埋件外露長度'],
+  '直橫料系統': ['立柱垂直度','橫料水平度','玻璃裝配尺寸','矽利康填縫','結構矽利康黏著','壓條鎖固'],
+  '單元式系統': ['單元板組裝精度','吊掛件固定','單元板對接縫隙','連接鋁件','水槽試水'],
+  '通用': ['外牆試水','外觀檢查','清潔與保護','安全防護']
+};
 const DEFAULT_PANEL_TYPES = ['鋁板 3t','玻璃 10+10+12A+10'];
 const DEFAULT_EQUIPMENT_TYPES = ['高空作業車','舉臂車','蜘蛛車','堆高機','25噸吊車','45噸吊車','80噸吊車','120噸吊車','200噸吊車','塔式吊車'];
 const DEFAULT_EQUIPMENT_UNITS = ['大有','展億'];
@@ -1681,7 +1873,16 @@ let settings = (function() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}'); } catch(e) { s = {}; }
   // ensure every key exists with a valid non-empty value
-  if (!Array.isArray(s.projects)) s.projects = ['華固中央置地','台肥南港C4'];
+  if (!Array.isArray(s.projects)) s.projects = ['台肥南港C4'];
+  // 移除舊的預設工程名稱
+  if (Array.isArray(s.projects)) {
+    var _pIdx = s.projects.indexOf('華固中央置地');
+    if (_pIdx !== -1) {
+      s.projects.splice(_pIdx, 1);
+      if (s.projectInfo && s.projectInfo['華固中央置地']) delete s.projectInfo['華固中央置地'];
+    }
+  }
+  if (!s.projectInfo || typeof s.projectInfo !== 'object') s.projectInfo = {};
   if (!Array.isArray(s.reporters)) s.reporters = ['李學儒'];
   if (!Array.isArray(s.contractors)) s.contractors = ['品興營造'];
   if (!Array.isArray(s.laborUnits)) s.laborUnits = ['壯觀','易琦','鴻宸','永恩','哲緯','威廷','睿展','伍銓','言荃'];
@@ -1694,6 +1895,13 @@ let settings = (function() {
   if (!Array.isArray(s.materialTypes)) s.materialTypes = [...DEFAULT_MATERIAL_TYPES];
   if (!Array.isArray(s.storageLocations)) s.storageLocations = [...DEFAULT_STORAGE_LOCATIONS];
   if (!Array.isArray(s.workTypes) || !s.workTypes.length) s.workTypes = [...DEFAULT_WORK_TYPES];
+  if (!Array.isArray(s.workUnits) || !s.workUnits.length) s.workUnits = [...DEFAULT_WORK_UNITS];
+  if (!s.inspectItems || typeof s.inspectItems !== 'object' || !Object.keys(s.inspectItems).length) {
+    s.inspectItems = JSON.parse(JSON.stringify(DEFAULT_INSPECT_ITEMS));
+  }
+  // 自動更新舊名稱
+  var _wIdx = s.workTypes.indexOf('鋁板美容');
+  if (_wIdx !== -1) s.workTypes[_wIdx] = '面板美容';
   if (!Array.isArray(s.siteManagers)) s.siteManagers = ['李宗憲'];
   if (!s.driveId) s.driveId = '';
   if (!s.contractQty) s.contractQty = 0;
@@ -1714,6 +1922,7 @@ let settings = (function() {
 })();
 let defects = [];
 let progressRows = [];
+let otherWorkRows = [];
 let materialRows = [];
 let equipmentRows = [];
 let equipmentSeq = 0;
@@ -1746,6 +1955,8 @@ function init() {
   renderFloorList();
   renderBlockList();
   renderWorkTypeList();
+  renderWorkUnitList();
+  renderInspectItemsConfig();
   renderSystemList();
   renderPanelTypeList();
   renderEquipmentTypeList();
@@ -1776,18 +1987,21 @@ function init() {
       } else {
         // 草稿日期不同，仍加預設空列
         addProgressRow();
+        addOtherWorkRow();
         addMaterialRow();
         addWorkerRow();
         addEquipmentRow();
       }
     } catch(e) {
       addProgressRow();
+      addOtherWorkRow();
       addMaterialRow();
       addWorkerRow();
       addEquipmentRow();
     }
   } else {
     addProgressRow();
+    addOtherWorkRow();
     addMaterialRow();
     addWorkerRow();
     addEquipmentRow();
@@ -1796,6 +2010,12 @@ function init() {
   startDraftTimer();
   // 開啟時從雲端同步（背景執行，不阻塞介面）
   syncFromCloud();
+  // 開啟時從雲端拉取最新設定（讓所有裝置的下拉選單同步）
+  loadSettingsFromCloud();
+  // 區塊快速跳轉：捲動自動高亮
+  initScrollSpy();
+  // 預設進入檢視模式
+  enterViewMode();
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
@@ -1848,6 +2068,7 @@ function collectDraft() {
       if (!t) return null;
       return {type:t.value,qty:q.value,receiver:rc.value,location:l.value,nextDate:n.value};
     }).filter(Boolean),
+    otherWork: getOtherWorkData(),
     equipment: getEquipmentData(),
     savedAt: new Date().toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}),
   };
@@ -1882,6 +2103,10 @@ function restoreDraft(draft) {
     progressRows = [];
     draft.progressRows.forEach(r => addProgressRow(r.block, r.dir, r.floor, r.sys, r.panelType, r.qty));
   }
+  // 其他工項
+  if (draft.otherWork && draft.otherWork.length) {
+    loadOtherWorkRows(draft.otherWork);
+  }
   // 工班
   if (draft.workerRows && draft.workerRows.length) {
     loadWorkerRows(draft.workerRows);
@@ -1894,7 +2119,7 @@ function restoreDraft(draft) {
   }
   // 機具設備
   if (draft.equipment && draft.equipment.length) {
-    loadEquipmentData(draft.equipment);
+    loadEquipmentRows(draft.equipment);
   } else {
     addEquipmentRow();
   }
@@ -1964,10 +2189,155 @@ function syncFromCloud() {
     });
 }
 
+// ════════════════ 設定持久化（本機 + 雲端）════════════════
+// 所有設定變動都呼叫這個，會同時寫入 localStorage 並推送到 Google Sheets
+var _settingsPushTimer = null;
+function persistSettings() {
+  // 1. 立即寫入本機
+  try { localStorage.setItem('cwSettings', JSON.stringify(settings || {})); } catch(e) {}
+  // 2. 延遲推送雲端（避免連續操作時狂打 API，1 秒內只推最後一次）
+  if (!GAS_URL) return;
+  if (_settingsPushTimer) clearTimeout(_settingsPushTimer);
+  _settingsPushTimer = setTimeout(function() {
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveSettings', settings: settings })
+    }).catch(function() { /* 靜默失敗，本機已存 */ });
+  }, 1000);
+}
+
+// 開頁面時從雲端拉取設定，覆蓋本機（讓所有裝置同步）
+function loadSettingsFromCloud() {
+  if (!GAS_URL) return;
+  fetch(GAS_URL + '?action=getSettings')
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.ok || !data.settings) return;
+      var cloud = data.settings;
+      // 用雲端設定覆蓋本機（保留本機的 gasUrl，避免把網址洗掉）
+      var keepGasUrl = settings.gasUrl;
+      settings = cloud;
+      if (keepGasUrl) settings.gasUrl = keepGasUrl;
+      // 清理已淘汰的預設工程名稱（雲端可能還存著）
+      var cloudDirty = false;
+      if (Array.isArray(settings.projects)) {
+        var _ci = settings.projects.indexOf('華固中央置地');
+        if (_ci !== -1) {
+          settings.projects.splice(_ci, 1);
+          if (settings.projectInfo && settings.projectInfo['華固中央置地']) delete settings.projectInfo['華固中央置地'];
+          cloudDirty = true;
+        }
+      }
+      try { localStorage.setItem('cwSettings', JSON.stringify(settings || {})); } catch(e) {}
+      // 若有清理，把乾淨的設定推回雲端
+      if (cloudDirty) persistSettings();
+      // 重新渲染所有設定相關的下拉選單與清單
+      refreshAllSettingViews();
+    })
+    .catch(function() { /* 靜默失敗，用本機設定 */ });
+}
+
+// 重新渲染所有跟設定有關的下拉選單與後台清單
+function refreshAllSettingViews() {
+  try {
+    renderProjectDropdown();   renderProjectList();
+    renderReporterDropdown();  renderReporterList();
+    renderContractorDropdown();renderContractorList();
+    renderLaborUnitDropdown(); renderLaborUnitList();
+    renderSiteManagerDropdown();renderSiteManagerList();
+    renderFloorList();
+    renderBlockList();
+    renderWorkTypeList();
+    renderWorkUnitList();
+    renderInspectItemsConfig();
+    renderSystemList();
+    renderPanelTypeList();
+    renderEquipmentTypeList(); renderEquipmentUnitList();
+    renderMaterialTypeList();  renderStorageLocationList();
+  } catch(e) {}
+}
+
 function clearDraft() {
   try { localStorage.removeItem('cwDraft'); } catch(e) {}
   const el = document.getElementById('draft-status');
   if (el) el.textContent = '';
+}
+
+// ════════════════ View / Edit Mode ════════════════
+var isEditMode = false;
+
+function _setDisp(id, val) { var el = document.getElementById(id); if (el) el.style.display = val; }
+
+function enterEditMode() {
+  isEditMode = true;
+  var viewDaily = document.getElementById('view-daily');
+  if (viewDaily) viewDaily.classList.remove('view-mode');
+  // 桌機 topbar 按鈕
+  _setDisp('btn-enter-edit','none'); _setDisp('btn-lock',''); _setDisp('btn-sync','');
+  _setDisp('btn-clear',''); _setDisp('btn-save','');
+  // 手機底部按鈕
+  _setDisp('m-btn-enter-edit','none'); _setDisp('m-btn-save',''); _setDisp('m-btn-lock','');
+  _setDisp('m-btn-clear','');
+}
+
+function enterViewMode() {
+  isEditMode = false;
+  var viewDaily = document.getElementById('view-daily');
+  if (viewDaily) viewDaily.classList.add('view-mode');
+  // 桌機 topbar 按鈕
+  _setDisp('btn-enter-edit',''); _setDisp('btn-lock','none'); _setDisp('btn-sync','none');
+  _setDisp('btn-clear','none'); _setDisp('btn-save','none');
+  // 手機底部按鈕
+  _setDisp('m-btn-enter-edit',''); _setDisp('m-btn-save','none'); _setDisp('m-btn-lock','none');
+  _setDisp('m-btn-clear','none');
+}
+
+// ════════════════ 區塊快速跳轉 ════════════════
+// 捲動容器是 .content（overflow-y:auto），不是 window
+function getScrollContainer() { return document.querySelector('.content'); }
+
+function jumpToSection(secId, btn) {
+  const el = document.getElementById(secId);
+  const cont = getScrollContainer();
+  if (!el || !cont) return;
+  // 高亮被點的標籤
+  document.querySelectorAll('#section-tabs .sec-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // 平滑捲動（扣掉吸附標籤列高度）
+  const tabs = document.getElementById('section-tabs');
+  const offset = (tabs ? tabs.offsetHeight : 0) + 12;
+  // el 相對 cont 的位置 = el 目前 top - cont 目前 top + cont 已捲動量
+  const y = el.getBoundingClientRect().top - cont.getBoundingClientRect().top + cont.scrollTop - offset;
+  cont.scrollTo({ top: y, behavior: 'smooth' });
+}
+
+// 捲動時自動高亮目前所在區塊對應的標籤
+var _scrollSpyTimer = null;
+function initScrollSpy() {
+  const cont = getScrollContainer();
+  if (!cont) return;
+  const secIds = ['sec-basic','sec-weather','sec-progress','sec-equipment','sec-material','sec-defect','sec-photo','sec-issue'];
+  cont.addEventListener('scroll', function() {
+    if (_scrollSpyTimer) return;
+    _scrollSpyTimer = setTimeout(function() {
+      _scrollSpyTimer = null;
+      const vd = document.getElementById('view-daily');
+      if (!vd || !vd.classList.contains('active')) return;
+      const tabs = document.getElementById('section-tabs');
+      const contTop = cont.getBoundingClientRect().top;
+      const offset = (tabs ? tabs.offsetHeight : 0) + 24;
+      let current = secIds[0];
+      for (let i = 0; i < secIds.length; i++) {
+        const el = document.getElementById(secIds[i]);
+        // 區塊頂端相對捲動容器頂端的位置
+        if (el && (el.getBoundingClientRect().top - contTop) <= offset) current = secIds[i];
+      }
+      document.querySelectorAll('#section-tabs .sec-tab').forEach(t => {
+        const onclickAttr = t.getAttribute('onclick') || '';
+        t.classList.toggle('active', onclickAttr.indexOf("'"+current+"'") !== -1);
+      });
+    }, 120);
+  }, { passive: true });
 }
 
 // ════════════════ Nav ════════════════
@@ -2000,18 +2370,18 @@ function addWorkerRow(laborUnit, qty, type, dir, floor) {
   row.className = 'worker-row';
   row.style.cssText = 'display:grid;grid-template-columns:130px 100px 120px 90px 110px 36px;gap:8px;align-items:center;';
   row.innerHTML = `
-    <select id="wr-labor-${id}" style="width:100%;">
+    <select id="wr-labor-${id}" data-label="勞務單位" style="width:100%;">
       ${buildOpts(settings.laborUnits||[], laborUnit, '勞務單位')}
     </select>
-    <input type="number" id="wr-qty-${id}" min="0" placeholder="人數" style="width:100%;" oninput="updateWorkerTotal()" value="${qty||''}">
-    <select id="wr-type-${id}" style="width:100%;">
+    <input type="number" id="wr-qty-${id}" data-label="人數" min="0" placeholder="人數" style="width:100%;" oninput="updateWorkerTotal()" value="${qty||''}">
+    <select id="wr-type-${id}" data-label="工種" style="width:100%;">
       <option value="">請選擇工種</option>
       ${(settings.workTypes||DEFAULT_WORK_TYPES).map(t => `<option${t===(type||'')?'  selected':''} value="${t}">${t}</option>`).join('')}
     </select>
-    <select id="wr-dir-${id}" style="width:100%;">
+    <select id="wr-dir-${id}" data-label="區域" style="width:100%;">
       ${buildOpts(DIRECTIONS, dir, '區域')}
     </select>
-    <select id="wr-floor-${id}" style="width:100%;">
+    <select id="wr-floor-${id}" data-label="樓層" style="width:100%;">
       ${buildOpts(settings.floors||[], floor, '樓層')}
     </select>
     <button class="btn btn-ghost" style="padding:7px 10px;font-size:12px;" onclick="removeWorkerRow(${id})">✕</button>
@@ -2071,12 +2441,12 @@ function addProgressRow(block, dir, floor, sys, panelType, qty) {
   row.className = 'progress-row';
   row.style.cssText = 'display:grid;grid-template-columns:70px 70px 80px 100px 170px 110px 36px;gap:8px;margin-bottom:8px;align-items:center;';
   row.innerHTML = `
-    <select id="prog-block-${idx}">${buildOpts(settings.blocks||[], block, '棟別')}</select>
-    <select id="prog-dir-${idx}">${buildOpts(DIRECTIONS, dir, '區域')}</select>
-    <select id="prog-floor-${idx}">${buildOpts(settings.floors||[], floor, '樓層')}</select>
-    <select id="prog-sys-${idx}" onchange="updateProgressSubtotal();updateProgress();">${buildOpts(settings.systems||[], sys, '系統')}</select>
-    <select id="prog-panel-${idx}">${buildOpts(settings.panelTypes||[], panelType, '板片類型')}</select>
-    <input type="number" id="prog-qty-${idx}" placeholder="數量" min="0" value="${qty||''}" style="width:100%;font-variant-numeric:tabular-nums;" oninput="updateProgressSubtotal();updateProgress();">
+    <select id="prog-block-${idx}" data-label="棟別">${buildOpts(settings.blocks||[], block, '棟別')}</select>
+    <select id="prog-dir-${idx}" data-label="區域">${buildOpts(DIRECTIONS, dir, '區域')}</select>
+    <select id="prog-floor-${idx}" data-label="樓層">${buildOpts(settings.floors||[], floor, '樓層')}</select>
+    <select id="prog-sys-${idx}" data-label="系統" onchange="updateProgressSubtotal();updateProgress();">${buildOpts(settings.systems||[], sys, '系統')}</select>
+    <select id="prog-panel-${idx}" data-label="板片類型">${buildOpts(settings.panelTypes||[], panelType, '板片類型')}</select>
+    <input type="number" id="prog-qty-${idx}" data-label="今日安裝數量" placeholder="數量" min="0" value="${qty||''}" style="width:100%;font-variant-numeric:tabular-nums;" oninput="updateProgressSubtotal();updateProgress();">
     <button class="btn btn-ghost" style="padding:7px 10px;font-size:12px;" onclick="removeProgressRow(${idx})">✕</button>
   `;
   container.appendChild(row);
@@ -2123,6 +2493,51 @@ function updateProgressSubtotal() {
   </table>`;
 }
 
+// ════════════════ Other Work Rows（其他工項）════════════════
+function addOtherWorkRow(block, floor, item, desc, qty, unit) {
+  const idx = otherWorkRows.length;
+  otherWorkRows.push({id: idx});
+  const container = document.getElementById('otherwork-rows');
+  const row = document.createElement('div');
+  row.id = 'ow-row-' + idx;
+  row.className = 'otherwork-row';
+  row.style.cssText = 'display:grid;grid-template-columns:70px 80px 100px 1fr 80px 80px 36px;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `
+    <select id="ow-block-${idx}" data-label="棟別">${buildOpts(settings.blocks||[], block, '棟別')}</select>
+    <select id="ow-floor-${idx}" data-label="樓層">${buildOpts(settings.floors||[], floor, '樓層')}</select>
+    <select id="ow-item-${idx}" data-label="工項">${buildOpts(settings.workTypes||DEFAULT_WORK_TYPES, item, '工項')}</select>
+    <input type="text" id="ow-desc-${idx}" data-label="完成說明" placeholder="例：東側放樣完成、水槽第3層安裝…" value="${desc||''}" style="width:100%;">
+    <input type="number" id="ow-qty-${idx}" data-label="數量" placeholder="數量" min="0" value="${qty||''}" style="width:100%;font-variant-numeric:tabular-nums;">
+    <select id="ow-unit-${idx}" data-label="單位">${buildOpts(settings.workUnits||DEFAULT_WORK_UNITS, unit, '單位')}</select>
+    <button class="btn btn-ghost" style="padding:7px 10px;font-size:12px;" onclick="removeOtherWorkRow(${idx})">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+function removeOtherWorkRow(idx) {
+  const el = document.getElementById('ow-row-'+idx);
+  if (el) el.remove();
+}
+
+function getOtherWorkData() {
+  return otherWorkRows.map(r => {
+    const block = document.getElementById('ow-block-'+r.id);
+    const floor = document.getElementById('ow-floor-'+r.id);
+    const item  = document.getElementById('ow-item-'+r.id);
+    const desc  = document.getElementById('ow-desc-'+r.id);
+    const qty   = document.getElementById('ow-qty-'+r.id);
+    const unit  = document.getElementById('ow-unit-'+r.id);
+    if (!block) return null;
+    return { block: block.value||'', floor: floor.value||'', item: item.value||'', desc: desc.value||'', qty: qty.value||'', unit: unit.value||'' };
+  }).filter(Boolean);
+}
+
+function loadOtherWorkRows(rows) {
+  document.getElementById('otherwork-rows').innerHTML = '';
+  otherWorkRows = [];
+  (rows||[]).forEach(r => addOtherWorkRow(r.block, r.floor, r.item, r.desc, r.qty, r.unit));
+}
+
 // ════════════════ Material Rows ════════════════
 function addMaterialRow(type, qty, receiver, location, nextDate) {
   const idx = materialRows.length;
@@ -2150,18 +2565,21 @@ function removeMaterialRow(idx) {
 // ════════════════ Inspections ════════════════
 let inspections = [];
 let inspectSeq  = 0;
-const INSPECT_ITEMS_HTML =
-  '<optgroup label="直橫料系統">' +
-    '<option>立柱垂直度</option><option>橫料水平度</option><option>玻璃裝配尺寸</option>' +
-    '<option>矽利康填縫</option><option>結構矽利康黏著</option><option>壓條鎖固</option>' +
-  '</optgroup>' +
-  '<optgroup label="單元式系統">' +
-    '<option>單元板組裝精度</option><option>吊掛件固定</option><option>單元板對接縫隙</option>' +
-    '<option>連接鋁件</option><option>水槽試水</option>' +
-  '</optgroup>' +
-  '<optgroup label="通用">' +
-    '<option>外牆試水</option><option>外觀檢查</option><option>清潔與保護</option><option>安全防護</option>' +
-  '</optgroup>';
+// 從 settings.inspectItems 動態產生查驗項目下拉（含分組）
+function buildInspectOptions(selected) {
+  var groups = settings.inspectItems || DEFAULT_INSPECT_ITEMS;
+  var html = '';
+  Object.keys(groups).forEach(function(grp) {
+    var items = groups[grp] || [];
+    if (!items.length) return;
+    html += '<optgroup label="' + grp + '">';
+    items.forEach(function(it) {
+      html += '<option' + (it === selected ? ' selected' : '') + '>' + it + '</option>';
+    });
+    html += '</optgroup>';
+  });
+  return html;
+}
 
 function addInspectRow(item, result, note) {
   inspectSeq++;
@@ -2184,7 +2602,7 @@ function addInspectRow(item, result, note) {
   const itemTd = document.createElement('td');
   const itemSel = document.createElement('select');
   itemSel.style.cssText = 'border:none;background:transparent;font-size:13px;width:100%;';
-  itemSel.innerHTML = '<option value="">請選擇查驗項目</option>' + INSPECT_ITEMS_HTML;
+  itemSel.innerHTML = '<option value="">請選擇查驗項目</option>' + buildInspectOptions(obj.item);
   itemSel.value = obj.item;
   itemSel.addEventListener('change', function() { obj.item = this.value; });
   itemTd.appendChild(itemSel);
@@ -2252,10 +2670,10 @@ function renderInspectTable() {
 // ════════════════ Defects ════════════════
 let defectSeq = 0;
 
-function addDefectRow(desc, cat, block, dir, floor, status) {
+function addDefectRow(desc, cat, block, dir, floor, status, photos) {
   defectSeq++;
   const seq = defectSeq;
-  const obj = { seq, desc: desc||'', cat: cat||'尺寸偏差', block: block||'', dir: dir||'', floor: floor||'', status: status||'待改善' };
+  const obj = { seq, desc: desc||'', cat: cat||'尺寸偏差', block: block||'', dir: dir||'', floor: floor||'', status: status||'待改善', photos: Array.isArray(photos)?photos.slice():[] };
   defects.push(obj);
 
   const tbody = document.getElementById('defect-tbody');
@@ -2335,29 +2753,31 @@ function addDefectRow(desc, cat, block, dir, floor, status) {
   const photoInput = document.createElement('input');
   photoInput.type = 'file';
   photoInput.accept = 'image/*';
+  photoInput.multiple = true;
   photoInput.style.cssText = 'display:none;';
   photoInput.id = 'defect-photo-input-' + seq;
   const photoBtn = document.createElement('button');
   photoBtn.className = 'btn btn-ghost';
   photoBtn.style.cssText = 'padding:4px 8px;font-size:11px;white-space:nowrap;';
   photoBtn.textContent = '📷';
-  photoBtn.title = '上傳缺失照片';
+  photoBtn.title = '上傳缺失照片（可多張，最多 ' + DEFECT_PHOTO_MAX + ' 張）';
   photoBtn.addEventListener('click', function() { photoInput.click(); });
   photoInput.addEventListener('change', function() {
-    if (this.files[0]) uploadDefectPhoto(this.files[0], seq, obj);
+    if (this.files.length) uploadDefectPhoto(this.files, seq, obj);
+    this.value = '';
   });
-  const photoThumb = document.createElement('img');
-  photoThumb.id = 'defect-photo-thumb-' + seq;
-  photoThumb.style.cssText = 'display:none;width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:pointer;margin-left:4px;vertical-align:middle;';
-  photoThumb.onclick = function() { if(obj.photoUrl) window.open(obj.photoUrl,'_blank'); };
+  const photoThumbs = document.createElement('span');
+  photoThumbs.id = 'defect-photo-thumbs-' + seq;
+  photoThumbs.style.cssText = 'display:inline-block;vertical-align:middle;';
   photoTd.appendChild(photoInput);
   photoTd.appendChild(photoBtn);
-  photoTd.appendChild(photoThumb);
+  photoTd.appendChild(photoThumbs);
 
   tr.appendChild(numTd); tr.appendChild(descTd); tr.appendChild(catTd);
   tr.appendChild(blockTd); tr.appendChild(dirTd); tr.appendChild(floorTd);
   tr.appendChild(statusTd); tr.appendChild(photoTd); tr.appendChild(delTd);
   tbody.appendChild(tr);
+  renderDefectPhotoThumbs(seq, obj);
   // 手機版卡片同步
   renderDefectMobile();
 }
@@ -2400,8 +2820,10 @@ function updateWeekday() {
 
 function updateProgress() {
   const currentDate = document.getElementById('f-date').value;
+  // 只有「單元」與「直橫料」兩大項目計入合約累積百分比；
+  // 其餘系統（雨遮、風除室、門窗…）僅在「今日小計」顯示數量，不併入累積。
   const UNIT_SYS  = ['單元'];
-  const STICK_SYS = ['直橫料','雨遮','風除室','門窗'];
+  const STICK_SYS = ['直橫料'];
 
   // 日期未填時：累積清零，合約面積仍顯示
   if (!currentDate) {
@@ -2503,7 +2925,7 @@ function generateDriveLink() {
   showToast(`Drive 連結已產生（日期：${date}）`);
   if (settings.driveId !== rootId) {
     settings.driveId = rootId;
-    try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+    persistSettings();
   }
 }
 function copyDriveLink() {
@@ -2514,10 +2936,27 @@ function copyDriveLink() {
 // ════════════════ Save Report ════════════════
 let isSaving = false;
 function saveReport() {
+  if (!isEditMode) { showToast('請先進入編輯模式才能儲存'); return; }
   if (isSaving) { showToast('儲存中，請稍候…'); return; }
   const date = document.getElementById('f-date').value;
-  if (!date) { showToast('請選擇日期'); return; }
+  if (!date) { showToast('⚠ 請選擇日期'); document.getElementById('f-date').focus(); return; }
+  const projectVal = document.getElementById('f-project').value;
+  if (!projectVal) {
+    showToast('⚠ 請選擇工程名稱');
+    var pf = document.getElementById('f-project'); if (pf) { pf.focus(); pf.scrollIntoView({behavior:'smooth',block:'center'}); }
+    return;
+  }
   const weather = document.querySelector('input[name="weather"]:checked');
+  if (!weather) {
+    showToast('⚠ 請選擇天氣狀況');
+    var wf = document.getElementById('w-sunny'); if (wf) wf.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  // 照片還在上傳中 → 擋下儲存，避免存出漏照片的日報表
+  if (photoUploadsInFlight > 0) {
+    showToast('⏳ 尚有 ' + photoUploadsInFlight + ' 張照片上傳中，請待「上傳完成」後再儲存');
+    return;
+  }
 
   const rows = progressRows.map(r => {
     const block     = document.getElementById('prog-block-'+r.id);
@@ -2554,6 +2993,7 @@ function saveReport() {
     workerData: getWorkerData(),
     totalWorkers: parseInt(document.getElementById('total-workers').textContent)||0,
     progressRows: rows,
+    otherWork: getOtherWorkData(),
     todayQty: rows.reduce((s,r) => s+r.qty, 0),
     cumDone: parseFloat(document.getElementById('f-cum-done').value)||0,
     cumTotal: settings.contractQty || 0,
@@ -2561,9 +3001,12 @@ function saveReport() {
     equipment: getEquipmentData(),
     materials: mats,
     materialNote: document.getElementById('f-material-note').value,
+    photos: JSON.parse(JSON.stringify(uploadedPhotos)),
+    photoNote: document.getElementById('f-photo-note').value,
     inspections: JSON.parse(JSON.stringify(inspections)),
     defects: JSON.parse(JSON.stringify(defects)),
     issues: document.getElementById('f-issues').value,
+    issuesPhotos: JSON.parse(JSON.stringify(issuesPhotos)),
     safety: document.getElementById('f-safety').value,
     remark: document.getElementById('f-remark').value,
     driveId: document.getElementById('f-drive-root').value,
@@ -2599,6 +3042,257 @@ function saveReport() {
       isSaving = false;
       showToast('⚠ 本機已儲存，但 Google Sheets 同步失敗，請檢查網路');
     });
+}
+
+// ════════════════ Print PDF ════════════════
+function printReport() {
+  // 收集目前表單資料
+  var date       = document.getElementById('f-date').value || '—';
+  var weekday    = document.getElementById('f-weekday').textContent || '';
+  var project    = document.getElementById('f-project').value || '—';
+  var reportNo   = document.getElementById('f-report-no').value || '—';
+  var owner      = document.getElementById('f-owner').value || '—';
+  var contractor = document.getElementById('f-contractor').value || '—';
+  var siteManager= document.getElementById('f-site-manager').value || '—';
+  var reporter   = document.getElementById('f-reporter').value || '—';
+  var weather    = (document.querySelector('input[name="weather"]:checked') || {}).value || '—';
+  var weatherImpact = document.getElementById('f-weather-impact').value || '—';
+  var tomorrowPlan  = document.getElementById('f-tomorrow-plan').value || '—';
+  var materialNote  = document.getElementById('f-material-note').value || '';
+  var photoNote     = document.getElementById('f-photo-note').value || '';
+  var issues        = document.getElementById('f-issues').value || '';
+  var safety        = document.getElementById('f-safety').value || '';
+  var remark        = document.getElementById('f-remark').value || '';
+
+  // 累積進度
+  var cumUnit  = document.getElementById('f-cum-unit').value  || '—';
+  var cumStick = document.getElementById('f-cum-stick').value || '—';
+  var cumDone  = document.getElementById('f-cum-done').value  || '—';
+  var cumTotal = document.getElementById('f-cum-total').value || '—';
+  var psUnit   = document.getElementById('ps-unit').textContent  || '';
+  var psStick  = document.getElementById('ps-stick').textContent || '';
+  var psTotal  = document.getElementById('ps-total').textContent || '';
+
+  // 工班資料
+  var workerHtml = '';
+  var workerTotal = document.getElementById('total-workers').textContent || '0';
+  workerRows.forEach(function(id) {
+    var u = document.getElementById('wr-labor-'+id);
+    var c = document.getElementById('wr-qty-'+id);
+    var t = document.getElementById('wr-type-'+id);
+    var d = document.getElementById('wr-dir-'+id);
+    var f = document.getElementById('wr-floor-'+id);
+    if (!u) return;
+    workerHtml += '<tr><td>'+(u.value||'—')+'</td><td style="text-align:center;">'+(c.value||'0')+'</td><td>'+(t.value||'—')+'</td><td>'+(d.value||'—')+'</td><td>'+(f.value||'—')+'</td></tr>';
+  });
+  if (!workerHtml) workerHtml = '<tr><td colspan="5" style="text-align:center;color:#999;">無記錄</td></tr>';
+
+  // 施工進度資料
+  var progressHtml = '';
+  progressRows.forEach(function(r) {
+    var b = document.getElementById('prog-block-'+r.id);
+    var d = document.getElementById('prog-dir-'+r.id);
+    var f = document.getElementById('prog-floor-'+r.id);
+    var s = document.getElementById('prog-sys-'+r.id);
+    var p = document.getElementById('prog-panel-'+r.id);
+    var q = document.getElementById('prog-qty-'+r.id);
+    if (!b) return;
+    progressHtml += '<tr><td>'+(b.value||'—')+'</td><td>'+(d.value||'—')+'</td><td>'+(f.value||'—')+'</td><td>'+(s.value||'—')+'</td><td>'+(p.value||'—')+'</td><td style="text-align:right;font-variant-numeric:tabular-nums;">'+(q.value||'0')+'</td></tr>';
+  });
+  if (!progressHtml) progressHtml = '<tr><td colspan="6" style="text-align:center;color:#999;">無記錄</td></tr>';
+
+  // 其他工項
+  var otherWorkHtml = '';
+  getOtherWorkData().forEach(function(w) {
+    otherWorkHtml += '<tr><td>'+(w.block||'—')+'</td><td>'+(w.floor||'—')+'</td><td>'+(w.item||'—')+'</td><td>'+(w.desc||'—')+'</td><td style="text-align:right;font-variant-numeric:tabular-nums;">'+(w.qty||'—')+'</td><td>'+(w.unit||'—')+'</td></tr>';
+  });
+  if (!otherWorkHtml) otherWorkHtml = '<tr><td colspan="6" style="text-align:center;color:#999;">無記錄</td></tr>';
+
+  // 機具設備
+  var equipData = getEquipmentData();
+  var equipHtml = '';
+  equipData.forEach(function(e) {
+    equipHtml += '<tr><td>'+(e.type||'—')+'</td><td>'+(e.unit||'—')+'</td><td style="text-align:center;">'+(e.qty||'0')+'</td><td style="text-align:center;">'+(e.shift||'—')+'</td><td>'+(e.purpose||'—')+'</td><td>'+(e.location||'—')+'</td></tr>';
+  });
+  if (!equipHtml) equipHtml = '<tr><td colspan="6" style="text-align:center;color:#999;">無記錄</td></tr>';
+
+  // 材料進場
+  var matHtml = '';
+  materialRows.forEach(function(r) {
+    var t  = document.getElementById('mat-type-'+r.id);
+    var q  = document.getElementById('mat-qty-'+r.id);
+    var rc = document.getElementById('mat-receiver-'+r.id);
+    var l  = document.getElementById('mat-location-'+r.id);
+    var n  = document.getElementById('mat-next-'+r.id);
+    if (!t) return;
+    matHtml += '<tr><td>'+(t.value||'—')+'</td><td style="text-align:right;">'+(q.value||'0')+'</td><td>'+(rc.value||'—')+'</td><td>'+(l.value||'—')+'</td><td>'+(n.value||'—')+'</td></tr>';
+  });
+  if (!matHtml) matHtml = '<tr><td colspan="5" style="text-align:center;color:#999;">無記錄</td></tr>';
+
+  // 查驗清單
+  var inspectHtml = '';
+  inspections.forEach(function(item, i) {
+    inspectHtml += '<tr><td style="text-align:center;">'+(i+1)+'</td><td>'+(item.item||'—')+'</td><td style="text-align:center;">'+(item.result||'—')+'</td><td>'+(item.note||'')+'</td></tr>';
+  });
+  if (!inspectHtml) inspectHtml = '<tr><td colspan="4" style="text-align:center;color:#999;">無記錄</td></tr>';
+
+  // 缺失清單
+  var defectHtml = '';
+  defects.forEach(function(d, i) {
+    var dp = getDefectPhotos(d);
+    var photoCell = dp.length
+      ? dp.map(function(p){ return '<img src="'+p.thumb+'" style="width:44px;height:44px;object-fit:cover;border-radius:3px;border:1px solid #e2e8f0;margin:1px;" crossorigin="anonymous">'; }).join('')
+      : '—';
+    defectHtml += '<tr><td style="text-align:center;">'+(i+1)+'</td><td>'+(d.desc||'—')+'</td><td>'+(d.cat||d.category||'—')+'</td><td>'+(d.block||'—')+'</td><td>'+(d.dir||'—')+'</td><td>'+(d.floor||'—')+'</td><td style="text-align:center;">'+(d.status||'—')+'</td><td style="text-align:center;">'+photoCell+'</td></tr>';
+  });
+  if (!defectHtml) defectHtml = '<tr><td colspan="8" style="text-align:center;color:#999;">無記錄</td></tr>';
+
+  // 施工照片
+  var photosHtml = '';
+  if (uploadedPhotos.length > 0) {
+    photosHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;">';
+    uploadedPhotos.forEach(function(p) {
+      photosHtml += '<div style="break-inside:avoid;"><img src="'+p.thumbUrl+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0;" crossorigin="anonymous"><div style="font-size:9px;color:#666;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.fileName+'</div></div>';
+    });
+    photosHtml += '</div>';
+  } else {
+    photosHtml = '<p style="color:#999;font-size:12px;">無照片</p>';
+  }
+
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+  var html = '<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><title>工地日報表 '+date+'</title><style>';
+  html += '*{box-sizing:border-box;margin:0;padding:0;}';
+  html += 'body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:11px;color:#1a202c;background:#fff;padding:0;}';
+  html += '@page{size:A4;margin:15mm 12mm 15mm 12mm;}';
+  html += '.page{width:100%;padding:0;}';
+  html += 'h1{font-size:15px;font-weight:800;letter-spacing:0.05em;color:#1a202c;}';
+  html += '.subtitle{font-size:11px;color:#4a5568;margin-top:2px;}';
+  html += '.header{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2.5px solid #1a365d;padding-bottom:8px;margin-bottom:12px;}';
+  html += '.header-left{}';
+  html += '.header-right{text-align:right;font-size:10px;color:#4a5568;line-height:1.8;}';
+  html += 'section{margin-bottom:12px;break-inside:avoid;}';
+  html += 'section.allow-break{break-inside:auto;}';
+  html += '.sec-title{font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#2b6cb0;border-left:3px solid #2b6cb0;padding-left:6px;margin-bottom:6px;}';
+  html += 'table{width:100%;border-collapse:collapse;font-size:10px;}';
+  html += 'th{background:#ebf4ff;color:#2c5282;font-weight:700;padding:4px 6px;border:1px solid #bee3f8;font-size:9px;letter-spacing:0.04em;}';
+  html += 'td{padding:4px 6px;border:1px solid #e2e8f0;vertical-align:top;}';
+  html += 'tr:nth-child(even) td{background:#f7fafc;}';
+  html += '.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}';
+  html += '.info-item{padding:5px 8px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;}';
+  html += '.info-label{font-size:9px;color:#718096;font-weight:600;letter-spacing:0.04em;margin-bottom:2px;}';
+  html += '.info-val{font-size:11px;font-weight:600;color:#1a202c;}';
+  html += '.progress-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}';
+  html += '.progress-box{padding:6px 8px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;}';
+  html += '.progress-label{font-size:9px;color:#718096;margin-bottom:2px;}';
+  html += '.progress-val{font-size:13px;font-weight:800;color:#2b6cb0;font-variant-numeric:tabular-nums;}';
+  html += '.progress-pct{font-size:9px;color:#4a5568;margin-top:1px;}';
+  html += '.note-box{background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;padding:6px 10px;font-size:10px;line-height:1.6;min-height:28px;white-space:pre-wrap;}';
+  html += '.col2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}';
+  html += '.weather-tag{display:inline-block;padding:2px 8px;background:#ebf8ff;color:#2b6cb0;border-radius:10px;font-weight:700;font-size:11px;}';
+  html += '.footer{border-top:1px solid #e2e8f0;padding-top:8px;margin-top:12px;display:flex;justify-content:space-between;font-size:9px;color:#718096;}';
+  html += '.sig-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px;}';
+  html += '.sig-box{border-top:1px solid #1a202c;padding-top:4px;text-align:center;font-size:9px;color:#4a5568;}';
+  html += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}';
+  html += '</style></head><body><div class="page">';
+
+  // 頁首
+  html += '<div class="header">';
+  html += '<div class="header-left"><h1>帷幕牆工地日報表</h1><div class="subtitle">'+esc(project)+'</div></div>';
+  html += '<div class="header-right"><div><strong>日期：</strong>'+esc(date)+' '+esc(weekday)+'</div><div><strong>報表編號：</strong>'+esc(reportNo)+'</div><div><strong>列印時間：</strong>'+new Date().toLocaleString('zh-TW',{hour12:false})+'</div></div>';
+  html += '</div>';
+
+  // 基本資訊
+  html += '<section><div class="sec-title">基本資訊</div>';
+  html += '<div class="info-grid">';
+  html += '<div class="info-item"><div class="info-label">業主</div><div class="info-val">'+esc(owner)+'</div></div>';
+  html += '<div class="info-item"><div class="info-label">總承包商</div><div class="info-val">'+esc(contractor)+'</div></div>';
+  html += '<div class="info-item"><div class="info-label">工地負責人</div><div class="info-val">'+esc(siteManager)+'</div></div>';
+  html += '<div class="info-item"><div class="info-label">填報人員</div><div class="info-val">'+esc(reporter)+'</div></div>';
+  html += '<div class="info-item"><div class="info-label">天氣</div><div class="info-val"><span class="weather-tag">'+esc(weather)+'</span></div></div>';
+  html += '<div class="info-item"><div class="info-label">天氣影響施工</div><div class="info-val">'+esc(weatherImpact)+'</div></div>';
+  html += '</div></section>';
+
+  // 工班出勤
+  html += '<section class="allow-break"><div class="sec-title">工班出勤（今日合計：'+esc(workerTotal)+' 人）</div>';
+  html += '<table><thead><tr><th>勞務單位</th><th>人數</th><th>工種</th><th>區域</th><th>樓層</th></tr></thead><tbody>'+workerHtml+'</tbody></table></section>';
+
+  // 今日施工進度（面板安裝）
+  html += '<section class="allow-break"><div class="sec-title">面板安裝進度（計面積）</div>';
+  html += '<table><thead><tr><th>棟別</th><th>區域</th><th>樓層</th><th>系統</th><th>板片類型</th><th>今日安裝數量</th></tr></thead><tbody>'+progressHtml+'</tbody></table></section>';
+
+  // 其他工項
+  html += '<section class="allow-break"><div class="sec-title">其他工項紀錄</div>';
+  html += '<table><thead><tr><th>棟別</th><th>樓層</th><th>工項</th><th>完成說明</th><th>數量</th><th>單位</th></tr></thead><tbody>'+otherWorkHtml+'</tbody></table>';
+  if (tomorrowPlan && tomorrowPlan !== '—') {
+    html += '<div style="margin-top:6px;"><span style="font-size:9px;font-weight:700;color:#718096;letter-spacing:0.04em;">明日預計施工計畫</span><div class="note-box" style="margin-top:3px;">'+esc(tomorrowPlan)+'</div></div>';
+  }
+  html += '</section>';
+
+  // 累積進度
+  html += '<section><div class="sec-title">累積進度</div>';
+  html += '<div class="progress-grid">';
+  html += '<div class="progress-box"><div class="progress-label">單元系統</div><div class="progress-val">'+esc(cumUnit)+' m²</div><div class="progress-pct">'+esc(psUnit)+'</div></div>';
+  html += '<div class="progress-box"><div class="progress-label">直橫料系統</div><div class="progress-val">'+esc(cumStick)+' m²</div><div class="progress-pct">'+esc(psStick)+'</div></div>';
+  html += '<div class="progress-box"><div class="progress-label">合計</div><div class="progress-val">'+esc(cumDone)+' / '+esc(cumTotal)+' m²</div><div class="progress-pct">'+esc(psTotal)+'</div></div>';
+  html += '</div></section>';
+
+  // 機具設備
+  html += '<section class="allow-break"><div class="sec-title">機具設備</div>';
+  html += '<table><thead><tr><th>設備名稱</th><th>廠商/單位</th><th>數量</th><th>工班</th><th>用途</th><th>存放位置</th></tr></thead><tbody>'+equipHtml+'</tbody></table></section>';
+
+  // 材料進場
+  html += '<section class="allow-break"><div class="sec-title">材料進場紀錄</div>';
+  html += '<table><thead><tr><th>材料種類</th><th>數量</th><th>收料人員</th><th>儲存位置</th><th>下次進料</th></tr></thead><tbody>'+matHtml+'</tbody></table>';
+  if (materialNote) html += '<div style="margin-top:5px;"><span style="font-size:9px;font-weight:700;color:#718096;">材料備註</span><div class="note-box" style="margin-top:3px;">'+esc(materialNote)+'</div></div>';
+  html += '</section>';
+
+  // 品質查驗
+  html += '<section class="allow-break"><div class="sec-title">查驗清單</div>';
+  html += '<table><thead><tr><th style="width:24px;">#</th><th>查驗項目</th><th style="width:80px;">查驗結果</th><th>備註</th></tr></thead><tbody>'+inspectHtml+'</tbody></table></section>';
+
+  // 缺失清單
+  html += '<section class="allow-break"><div class="sec-title">缺失清單</div>';
+  html += '<table><thead><tr><th style="width:24px;">#</th><th>缺失描述</th><th>類別</th><th>棟別</th><th>區域</th><th>樓層</th><th>狀態</th><th>照片</th></tr></thead><tbody>'+defectHtml+'</tbody></table></section>';
+
+  // 施工照片
+  html += '<section class="allow-break"><div class="sec-title">施工照片</div>';
+  html += photosHtml;
+  if (photoNote) html += '<div style="margin-top:6px;"><span style="font-size:9px;font-weight:700;color:#718096;">照片說明</span><div class="note-box" style="margin-top:3px;">'+esc(photoNote)+'</div></div>';
+  html += '</section>';
+
+  // 工地問題與備註
+  html += '<section><div class="sec-title">工地問題與備註</div><div class="col2">';
+  html += '<div><div style="font-size:9px;font-weight:700;color:#718096;margin-bottom:3px;">工地問題／待處理事項</div><div class="note-box">'+esc(issues||'—')+'</div></div>';
+  html += '<div><div style="font-size:9px;font-weight:700;color:#718096;margin-bottom:3px;">安全事項</div><div class="note-box">'+esc(safety||'—')+'</div></div>';
+  html += '</div>';
+  if (remark) html += '<div style="margin-top:6px;"><div style="font-size:9px;font-weight:700;color:#718096;margin-bottom:3px;">其他備註</div><div class="note-box">'+esc(remark)+'</div></div>';
+  if (issuesPhotos.length) {
+    html += '<div style="margin-top:8px;"><div style="font-size:9px;font-weight:700;color:#718096;margin-bottom:3px;">工地問題照片</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">';
+    issuesPhotos.forEach(function(p){ html += '<img src="'+p.thumb+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0;" crossorigin="anonymous">'; });
+    html += '</div></div>';
+  }
+  html += '</section>';
+
+  // 簽名欄
+  html += '<div class="sig-row">';
+  html += '<div class="sig-box">填報人員<br>'+esc(reporter)+'</div>';
+  html += '<div class="sig-box">工地負責人<br>'+esc(siteManager)+'</div>';
+  html += '<div class="sig-box">審核</div>';
+  html += '</div>';
+
+  // 頁尾
+  html += '<div class="footer"><span>'+esc(project)+'　工地日報表　'+esc(date)+'</span><span>報表編號：'+esc(reportNo)+'</span></div>';
+
+  html += '</div></body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) { showToast('請允許瀏覽器開啟新視窗以列印 PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function() { win.print(); }, 600);
 }
 
 // ════════════════ History ════════════════
@@ -2669,6 +3363,8 @@ function loadReport(date) {
     addProgressRow();
   }
   updateProgress();
+  // reload 其他工項
+  loadOtherWorkRows(r.otherWork || []);
   document.getElementById('f-tomorrow-plan').value = r.tomorrowPlan || '';
   loadEquipmentRows(r.equipment);
   // reload material rows
@@ -2683,12 +3379,20 @@ function loadReport(date) {
   document.getElementById('f-issues').value = r.issues || '';
   document.getElementById('f-safety').value = r.safety || '';
   document.getElementById('f-remark').value = r.remark || '';
+  var pnEl = document.getElementById('f-photo-note'); if (pnEl) pnEl.value = r.photoNote || '';
+  // 還原施工照片
+  uploadedPhotos = Array.isArray(r.photos) ? r.photos.slice()
+    : (Array.isArray(r.uploadedPhotos) ? r.uploadedPhotos.slice() : []);
+  renderPhotoGrid();
+  // 還原工地問題照片
+  issuesPhotos = Array.isArray(r.issuesPhotos) ? r.issuesPhotos.slice() : [];
+  renderIssuesPhotoGrid();
   // 還原查驗清單
   renderInspectTable();
   (r.inspections || []).forEach(x => addInspectRow(x.item, x.result, x.note));
-  // 還原缺失清單
+  // 還原缺失清單（含照片）
   renderDefectTable();
-  (r.defects || []).forEach(x => addDefectRow(x.desc, x.cat, x.block, x.dir, x.floor, x.status));
+  (r.defects || []).forEach(x => addDefectRow(x.desc, x.cat, x.block, x.dir, x.floor, x.status, getDefectPhotos(x)));
   showView('daily');
   showToast('已載入 ' + date + ' 日報表');
 }
@@ -2963,7 +3667,8 @@ function renderTracker() {
         dir:    d.dir    || '',
         floor:  d.floor  || '',
         status: d.status || '待改善',
-        updatedAt: d.updatedAt || ''
+        updatedAt: d.updatedAt || '',
+        photos: getDefectPhotos(d)
       });
     });
   });
@@ -3014,7 +3719,7 @@ function renderTracker() {
   if (!tbody) return;
 
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">' +
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:28px;font-size:13px;">' +
       (total ? '目前篩選條件無符合缺失' : '尚無缺失紀錄') + '</td></tr>';
     return;
   }
@@ -3084,6 +3789,25 @@ function renderTracker() {
     });
     statusTd.appendChild(statusSel);
 
+    // 照片縮圖（多張並列，點擊放大）
+    var photoTd = document.createElement('td');
+    photoTd.style.cssText = 'text-align:center;';
+    var tphotos = d.photos || [];
+    if (tphotos.length) {
+      photoTd.style.cssText = 'text-align:center;white-space:normal;';
+      tphotos.forEach(function(p) {
+        var pimg = document.createElement('img');
+        pimg.src = p.thumb;
+        pimg.style.cssText = 'width:32px;height:32px;object-fit:cover;border-radius:4px;cursor:pointer;vertical-align:middle;margin:1px;';
+        pimg.title = '點擊放大檢視';
+        pimg.onclick = (function(url){ return function(){ if (url) window.open(url, '_blank'); }; })(p.url);
+        photoTd.appendChild(pimg);
+      });
+    } else {
+      photoTd.textContent = '—';
+      photoTd.style.color = 'var(--muted)';
+    }
+
     // 更新時間
     var updTd = document.createElement('td');
     updTd.style.cssText = 'font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;';
@@ -3091,7 +3815,7 @@ function renderTracker() {
 
     tr.appendChild(numTd); tr.appendChild(dateTd); tr.appendChild(descTd);
     tr.appendChild(catTd); tr.appendChild(blockTd); tr.appendChild(dirTd);
-    tr.appendChild(floorTd); tr.appendChild(statusTd); tr.appendChild(updTd);
+    tr.appendChild(floorTd); tr.appendChild(statusTd); tr.appendChild(photoTd); tr.appendChild(updTd);
     tbody.appendChild(tr);
   });
 }
@@ -3285,6 +4009,47 @@ function renderProjectDropdown() {
   });
 }
 
+// 日報表選擇工程名稱後，自動帶入該工程的業主／承包商／負責人／合約面積
+function applyProjectInfo() {
+  const name = document.getElementById('f-project').value;
+  if (!name || !settings.projectInfo || !settings.projectInfo[name]) return;
+  const info = settings.projectInfo[name];
+
+  if (info.owner) document.getElementById('f-owner').value = info.owner;
+
+  // 總承包商：若清單裡沒有這個名稱，先補進 option 再選取
+  if (info.contractor) {
+    const cSel = document.getElementById('f-contractor');
+    if (![...cSel.options].some(o => o.value === info.contractor)) {
+      const o = document.createElement('option');
+      o.value = info.contractor; o.textContent = info.contractor;
+      cSel.appendChild(o);
+    }
+    cSel.value = info.contractor;
+  }
+
+  // 工地負責人：同上
+  if (info.siteManager) {
+    const mSel = document.getElementById('f-site-manager');
+    if (![...mSel.options].some(o => o.value === info.siteManager)) {
+      const o = document.createElement('option');
+      o.value = info.siteManager; o.textContent = info.siteManager;
+      mSel.appendChild(o);
+    }
+    mSel.value = info.siteManager;
+  }
+
+  // 合約面積：帶入累積進度的合約總量（此工程專屬，覆蓋全域設定）
+  const qtyUnit  = info.qtyUnit  || 0;
+  const qtyStick = info.qtyStick || 0;
+  if (qtyUnit || qtyStick) {
+    settings.contractQtyUnit  = qtyUnit;
+    settings.contractQtyStick = qtyStick;
+    settings.contractQty      = qtyUnit + qtyStick;
+    updateProgress();
+  }
+}
+
 function renderProjectList() {
   const list = document.getElementById('project-list');
   if (!list) return;
@@ -3292,12 +4057,52 @@ function renderProjectList() {
     list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0;">尚無工程名稱，請新增。</div>';
     return;
   }
-  list.innerHTML = settings.projects.map((name, i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
-      <span style="font-size:13px;flex:1;">${name}</span>
-      <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:var(--danger);" onclick="removeProjectName(${i})">刪除</button>
-    </div>
-  `).join('');
+  if (!settings.projectInfo) settings.projectInfo = {};
+  list.innerHTML = settings.projects.map((name, i) => {
+    const info = settings.projectInfo[name] || {};
+    const esc = v => (v==null?'':String(v)).replace(/"/g,'&quot;');
+    return `
+    <div style="background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;">
+        <span style="font-size:13px;font-weight:600;flex:1;">${name}</span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="toggleProjectEdit(${i})">✏️ 編輯資料</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:var(--danger);" onclick="removeProjectName(${i})">刪除</button>
+      </div>
+      <div id="proj-edit-${i}" style="display:none;padding:12px;border-top:1px solid var(--border);background:#fff;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label style="font-size:11px;">業主</label><input type="text" id="proj-owner-${i}" value="${esc(info.owner)}" placeholder="業主名稱"></div>
+          <div class="field"><label style="font-size:11px;">總承包商</label><input type="text" id="proj-contractor-${i}" value="${esc(info.contractor)}" placeholder="總承包商"></div>
+          <div class="field"><label style="font-size:11px;">工地負責人</label><input type="text" id="proj-manager-${i}" value="${esc(info.siteManager)}" placeholder="工地負責人"></div>
+          <div class="field"><label style="font-size:11px;">單元系統合約面積（m²）</label><input type="number" id="proj-qtyunit-${i}" value="${esc(info.qtyUnit)}" placeholder="例：3500" min="0"></div>
+          <div class="field"><label style="font-size:11px;">直橫料系統合約面積（m²）</label><input type="number" id="proj-qtystick-${i}" value="${esc(info.qtyStick)}" placeholder="例：2000" min="0"></div>
+          <div></div>
+        </div>
+        <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+          <button class="btn btn-primary" style="font-size:12px;padding:6px 16px;" onclick="saveProjectInfo(${i})">儲存此工程資料</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleProjectEdit(idx) {
+  const el = document.getElementById('proj-edit-'+idx);
+  if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+}
+
+function saveProjectInfo(idx) {
+  const name = settings.projects[idx];
+  if (!name) return;
+  if (!settings.projectInfo) settings.projectInfo = {};
+  settings.projectInfo[name] = {
+    owner:       document.getElementById('proj-owner-'+idx).value.trim(),
+    contractor:  document.getElementById('proj-contractor-'+idx).value.trim(),
+    siteManager: document.getElementById('proj-manager-'+idx).value.trim(),
+    qtyUnit:     parseFloat(document.getElementById('proj-qtyunit-'+idx).value)  || 0,
+    qtyStick:    parseFloat(document.getElementById('proj-qtystick-'+idx).value) || 0,
+  };
+  persistSettings();
+  showToast('已儲存「' + name + '」的工程資料');
 }
 
 function addProjectName() {
@@ -3306,7 +4111,7 @@ function addProjectName() {
   if (!name) { showToast('請輸入工程名稱'); return; }
   if (settings.projects.includes(name)) { showToast('此工程名稱已存在'); return; }
   settings.projects.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = '';
   renderProjectDropdown();
   renderProjectList();
@@ -3317,7 +4122,8 @@ function removeProjectName(idx) {
   const name = settings.projects[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.projects.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  if (settings.projectInfo && settings.projectInfo[name]) delete settings.projectInfo[name];
+  persistSettings();
   renderProjectDropdown();
   renderProjectList();
   showToast('已刪除：' + name);
@@ -3357,7 +4163,7 @@ function addReporterName() {
   if (!name) { showToast('請輸入人員姓名'); return; }
   if (settings.reporters.includes(name)) { showToast('此人員已存在'); return; }
   settings.reporters.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = '';
   renderReporterDropdown();
   renderReporterList();
@@ -3368,7 +4174,7 @@ function removeReporterName(idx) {
   const name = settings.reporters[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.reporters.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderReporterDropdown();
   renderReporterList();
   showToast('已刪除：' + name);
@@ -3409,7 +4215,7 @@ function addSiteManager() {
   if (!Array.isArray(settings.siteManagers)) settings.siteManagers = [];
   if (settings.siteManagers.includes(name)) { showToast('此人員已存在'); return; }
   settings.siteManagers.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = '';
   renderSiteManagerDropdown();
   renderSiteManagerList();
@@ -3420,7 +4226,7 @@ function removeSiteManager(idx) {
   const name = settings.siteManagers[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.siteManagers.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderSiteManagerDropdown();
   renderSiteManagerList();
   showToast('已刪除：' + name);
@@ -3460,7 +4266,7 @@ function addContractorName() {
   if (!name) { showToast('請輸入總承包商名稱'); return; }
   if (settings.contractors.includes(name)) { showToast('此總承包商已存在'); return; }
   settings.contractors.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = '';
   renderContractorDropdown();
   renderContractorList();
@@ -3471,7 +4277,7 @@ function removeContractorName(idx) {
   const name = settings.contractors[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.contractors.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderContractorDropdown();
   renderContractorList();
   showToast('已刪除：' + name);
@@ -3503,7 +4309,7 @@ function addLaborUnit() {
   if (!name) { showToast('請輸入勞務單位名稱'); return; }
   if (settings.laborUnits.includes(name)) { showToast('此勞務單位已存在'); return; }
   settings.laborUnits.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = '';
   renderLaborUnitDropdown();
   renderLaborUnitList();
@@ -3514,7 +4320,7 @@ function removeLaborUnit(idx) {
   const name = settings.laborUnits[idx];
   if (!confirm('確定刪除「' + name + '」？')) return;
   settings.laborUnits.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderLaborUnitDropdown();
   renderLaborUnitList();
   showToast('已刪除：' + name);
@@ -3537,15 +4343,122 @@ function addWorkType() {
   if (!Array.isArray(settings.workTypes)) settings.workTypes = [];
   if (settings.workTypes.includes(name)) { showToast('此工種已存在'); return; }
   settings.workTypes.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderWorkTypeList(); showToast('已新增：' + name);
 }
 function removeWorkType(idx) {
   const name = settings.workTypes[idx];
   settings.workTypes.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderWorkTypeList();
   showToast('已刪除：' + name);
+}
+
+// ════════════════ Work Units（工項單位）════════════════
+function renderWorkUnitList() {
+  const list = document.getElementById('work-unit-list');
+  if (!list) return;
+  list.innerHTML = (settings.workUnits||[]).map((v,i) => `
+    <div style="display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:13px;">
+      <span>${v}</span>
+      <button style="border:none;background:transparent;cursor:pointer;color:var(--danger);font-size:12px;padding:0 2px;" onclick="removeWorkUnit(${i})">✕</button>
+    </div>`).join('') || '<div style="font-size:13px;color:var(--muted);">尚無單位，請新增。</div>';
+}
+function addWorkUnit() {
+  const input = document.getElementById('cfg-new-work-unit');
+  const name = input.value.trim();
+  if (!name) { showToast('請輸入單位'); return; }
+  if (!Array.isArray(settings.workUnits)) settings.workUnits = [];
+  if (settings.workUnits.includes(name)) { showToast('此單位已存在'); return; }
+  settings.workUnits.push(name);
+  persistSettings();
+  input.value = ''; renderWorkUnitList(); showToast('已新增：' + name);
+}
+function removeWorkUnit(idx) {
+  const name = settings.workUnits[idx];
+  settings.workUnits.splice(idx, 1);
+  persistSettings();
+  renderWorkUnitList();
+  showToast('已刪除：' + name);
+}
+
+// ════════════════ 查驗項目管理 ════════════════
+function renderInspectItemsConfig() {
+  const box = document.getElementById('inspect-items-groups');
+  if (!box) return;
+  if (!settings.inspectItems || typeof settings.inspectItems !== 'object') {
+    settings.inspectItems = JSON.parse(JSON.stringify(DEFAULT_INSPECT_ITEMS));
+  }
+  const groups = settings.inspectItems;
+  const grpKeys = Object.keys(groups);
+  if (!grpKeys.length) {
+    box.innerHTML = '<div style="font-size:13px;color:var(--muted);">尚無查驗分組，請於下方新增分組。</div>';
+    return;
+  }
+  box.innerHTML = grpKeys.map(function(grp) {
+    const items = groups[grp] || [];
+    const gEsc = grp.replace(/"/g,'&quot;');
+    const chips = items.map(function(it, i) {
+      return '<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:13px;">' +
+        '<span>' + it + '</span>' +
+        '<button style="border:none;background:transparent;cursor:pointer;color:var(--danger);font-size:12px;padding:0 2px;" onclick="removeInspectItem(\'' + gEsc + '\',' + i + ')">✕</button>' +
+      '</div>';
+    }).join('');
+    return '<div style="border:1px solid var(--border);border-radius:8px;padding:12px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+        '<span style="font-size:13px;font-weight:700;color:var(--navy);">' + grp + '</span>' +
+        '<button class="btn btn-ghost" style="font-size:11px;padding:3px 10px;color:var(--danger);" onclick="removeInspectGroup(\'' + gEsc + '\')">刪除分組</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">' + (chips || '<span style="font-size:12px;color:var(--muted);">此分組尚無項目</span>') + '</div>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<input type="text" id="cfg-new-inspect-item-' + gEsc + '" placeholder="新增查驗項目…" style="flex:1;font-size:13px;" onkeydown="if(event.key===\'Enter\')addInspectItem(\'' + gEsc + '\')">' +
+        '<button class="btn btn-ghost" style="font-size:12px;" onclick="addInspectItem(\'' + gEsc + '\')">+ 新增項目</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function addInspectItem(grp) {
+  const input = document.getElementById('cfg-new-inspect-item-' + grp.replace(/"/g,'&quot;'));
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) { showToast('請輸入查驗項目'); return; }
+  if (!settings.inspectItems[grp]) settings.inspectItems[grp] = [];
+  if (settings.inspectItems[grp].includes(name)) { showToast('此項目已存在'); return; }
+  settings.inspectItems[grp].push(name);
+  persistSettings();
+  renderInspectItemsConfig();
+  showToast('已新增：' + name);
+}
+
+function removeInspectItem(grp, idx) {
+  if (!settings.inspectItems[grp]) return;
+  const name = settings.inspectItems[grp][idx];
+  settings.inspectItems[grp].splice(idx, 1);
+  persistSettings();
+  renderInspectItemsConfig();
+  showToast('已刪除：' + name);
+}
+
+function addInspectGroup() {
+  const input = document.getElementById('cfg-new-inspect-group');
+  const name = input.value.trim();
+  if (!name) { showToast('請輸入分組名稱'); return; }
+  if (!settings.inspectItems) settings.inspectItems = {};
+  if (settings.inspectItems[name]) { showToast('此分組已存在'); return; }
+  settings.inspectItems[name] = [];
+  persistSettings();
+  input.value = '';
+  renderInspectItemsConfig();
+  showToast('已新增分組：' + name);
+}
+
+function removeInspectGroup(grp) {
+  if (!confirm('確定刪除分組「' + grp + '」及其所有查驗項目？')) return;
+  delete settings.inspectItems[grp];
+  persistSettings();
+  renderInspectItemsConfig();
+  showToast('已刪除分組：' + grp);
 }
 
 // ════════════════ Blocks ════════════════
@@ -3564,12 +4477,12 @@ function addBlock() {
   if (!name) { showToast('請輸入棟別'); return; }
   if (settings.blocks.includes(name)) { showToast('此棟別已存在'); return; }
   settings.blocks.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderBlockList(); showToast('已新增：' + name);
 }
 function removeBlock(idx) {
   settings.blocks.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderBlockList();
 }
 
@@ -3589,12 +4502,12 @@ function addSystem() {
   if (!name) { showToast('請輸入系統名稱'); return; }
   if (settings.systems.includes(name)) { showToast('此系統已存在'); return; }
   settings.systems.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderSystemList(); showToast('已新增：' + name);
 }
 function removeSystem(idx) {
   settings.systems.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderSystemList();
 }
 
@@ -3615,12 +4528,12 @@ function addPanelType() {
   if (!Array.isArray(settings.panelTypes)) settings.panelTypes = [];
   if (settings.panelTypes.includes(name)) { showToast('此板片類型已存在'); return; }
   settings.panelTypes.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderPanelTypeList(); showToast('已新增：' + name);
 }
 function removePanelType(idx) {
   settings.panelTypes.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderPanelTypeList();
 }
 
@@ -3707,12 +4620,12 @@ function addEquipmentType() {
   if (!Array.isArray(settings.equipmentTypes)) settings.equipmentTypes = [];
   if (settings.equipmentTypes.includes(name)) { showToast('此設備已存在'); return; }
   settings.equipmentTypes.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderEquipmentTypeList(); showToast('已新增：' + name);
 }
 function removeEquipmentType(idx) {
   settings.equipmentTypes.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderEquipmentTypeList();
 }
 
@@ -3732,12 +4645,12 @@ function addEquipmentUnit() {
   if (!Array.isArray(settings.equipmentUnits)) settings.equipmentUnits = [];
   if (settings.equipmentUnits.includes(name)) { showToast('此設備單位已存在'); return; }
   settings.equipmentUnits.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderEquipmentUnitList(); showToast('已新增：' + name);
 }
 function removeEquipmentUnit(idx) {
   settings.equipmentUnits.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderEquipmentUnitList();
 }
 
@@ -3758,12 +4671,12 @@ function addMaterialType() {
   if (!Array.isArray(settings.materialTypes)) settings.materialTypes = [];
   if (settings.materialTypes.includes(name)) { showToast('此材料種類已存在'); return; }
   settings.materialTypes.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderMaterialTypeList(); showToast('已新增：' + name);
 }
 function removeMaterialType(idx) {
   settings.materialTypes.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderMaterialTypeList();
 }
 
@@ -3784,12 +4697,12 @@ function addStorageLocation() {
   if (!Array.isArray(settings.storageLocations)) settings.storageLocations = [];
   if (settings.storageLocations.includes(name)) { showToast('此位置已存在'); return; }
   settings.storageLocations.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = ''; renderStorageLocationList(); showToast('已新增：' + name);
 }
 function removeStorageLocation(idx) {
   settings.storageLocations.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderStorageLocationList();
 }
 
@@ -3815,7 +4728,7 @@ function addFloor() {
   if (!name) { showToast('請輸入樓層名稱'); return; }
   if (settings.floors.includes(name)) { showToast('此樓層已存在'); return; }
   settings.floors.push(name);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   input.value = '';
   renderFloorList();
   showToast('已新增：' + name);
@@ -3823,14 +4736,14 @@ function addFloor() {
 
 function removeFloor(idx) {
   settings.floors.splice(idx, 1);
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderFloorList();
 }
 
 function resetFloors() {
   if (!confirm('確定重設為預設樓層 1F~22F？')) return;
   settings.floors = [...DEFAULT_FLOORS];
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   renderFloorList();
   showToast('已重設為 1F~22F');
 }
@@ -3875,7 +4788,7 @@ function saveSettings() {
   settings.contractQty      = settings.contractQtyUnit + settings.contractQtyStick;
   var newGasUrl = document.getElementById('cfg-gas-url').value.trim();
   if (newGasUrl) { settings.gasUrl = newGasUrl; GAS_URL = newGasUrl; }
-  try { localStorage.setItem('cwSettings', JSON.stringify(settings)); } catch(e) {}
+  persistSettings();
   if (settings.driveId) { var dr = document.getElementById('f-drive-root'); if(dr) dr.value = settings.driveId; }
   updateProgress();
   showToast('設定已儲存');
@@ -3918,6 +4831,8 @@ function clearForm() {
   loadWorkerRows([]);
   document.getElementById('progress-rows').innerHTML = '';
   progressRows = []; addProgressRow();
+  document.getElementById('otherwork-rows').innerHTML = '';
+  otherWorkRows = []; addOtherWorkRow();
   document.getElementById('material-rows').innerHTML = '';
   materialRows = []; addMaterialRow();
   document.getElementById('f-tomorrow-plan').value = '';
@@ -3926,6 +4841,9 @@ function clearForm() {
   document.getElementById('f-issues').value = '';
   document.getElementById('f-safety').value = '';
   document.getElementById('f-remark').value = '';
+  var pn = document.getElementById('f-photo-note'); if (pn) pn.value = '';
+  uploadedPhotos = []; renderPhotoGrid();
+  issuesPhotos = []; renderIssuesPhotoGrid();
   renderDefectTable();
   updateProgress();
   clearDraft(); // 手動清除時也清掉草稿
@@ -3963,6 +4881,7 @@ function bindButtons() {
   var map = {
     'btn-add-worker':    function(){ addWorkerRow(); },
     'btn-add-progress':  function(){ addProgressRow(); },
+    'btn-add-otherwork': function(){ addOtherWorkRow(); },
     'btn-add-equipment': function(){ addEquipmentRow(); },
     'btn-add-material':  function(){ addMaterialRow(); },
     'btn-add-photo':     function(){ document.getElementById('photo-file-input').click(); },
@@ -4001,7 +4920,7 @@ function renderInspectMobile() {
       '<div style="display:flex;flex-direction:column;gap:4px;">' +
         '<span style="font-size:14px;font-weight:700;color:var(--muted);">查驗項目</span>' +
         '<select id="mi-item-' + obj.seq + '" style="width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;">' +
-          '<option value="">請選擇查驗項目</option>' + INSPECT_ITEMS_HTML +
+          '<option value="">請選擇查驗項目</option>' + buildInspectOptions(obj.item) +
         '</select>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;gap:4px;">' +
@@ -4043,7 +4962,13 @@ function renderDefectMobile() {
     card.style.cssText = 'background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;';
     var selStyle = 'width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;';
     var inpStyle = 'width:100%;font-size:18px;min-height:54px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;';
-    var thumbHtml = obj.photoThumb ? '<img src="'+obj.photoThumb+'" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="window.open(\''+obj.photoUrl+'\',\'_blank\')">' : '';
+    var _photos = getDefectPhotos(obj);
+    var thumbHtml = _photos.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + _photos.map(function(p, pi){
+      return '<span style="position:relative;display:inline-block;">' +
+        '<img src="'+p.thumb+'" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="window.open(\''+p.url+'\',\'_blank\')">' +
+        '<button type="button" onclick="removeDefectPhoto('+obj.seq+','+pi+')" style="position:absolute;top:-6px;right:-6px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;line-height:1;cursor:pointer;padding:0;">✕</button>' +
+        '</span>';
+    }).join('') + '</div>' : '';
     card.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
         '<span style="font-size:13px;font-weight:700;color:var(--muted);">缺失 ' + String(i+1).padStart(2,'0') + '</span>' +
@@ -4061,8 +4986,8 @@ function renderDefectMobile() {
       '<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:14px;font-weight:700;color:var(--muted);">狀態</span>' +
         '<select id="md-status-' + obj.seq + '" style="' + selStyle + '"><option>待改善</option><option>改善中</option><option>已改善</option></select></div>' +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
-        '<span style="font-size:14px;font-weight:700;color:var(--muted);">缺失照片</span>' +
-        '<input type="file" id="md-photo-input-' + obj.seq + '" accept="image/*" style="display:none;">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--muted);">缺失照片（最多 ' + DEFECT_PHOTO_MAX + ' 張）</span>' +
+        '<input type="file" id="md-photo-input-' + obj.seq + '" accept="image/*" multiple style="display:none;">' +
         '<button class="btn btn-ghost" style="width:100%;min-height:50px;font-size:16px;" onclick="document.getElementById(\'md-photo-input-' + obj.seq + '\').click()">📷 上傳缺失照片</button>' +
         (thumbHtml ? thumbHtml : '') +
       '</div>';
@@ -4082,12 +5007,13 @@ function renderDefectMobile() {
     var stEl = document.getElementById('md-status-' + obj.seq);
     if (stEl) { stEl.value = obj.status; stEl.addEventListener('change', (function(o){ return function(){ o.status=this.value; }; })(obj)); }
     var photoInp = document.getElementById('md-photo-input-' + obj.seq);
-    if (photoInp) { photoInp.addEventListener('change', (function(o, s){ return function(){ if(this.files[0]) uploadDefectPhoto(this.files[0], s, o); }; })(obj, obj.seq)); }
+    if (photoInp) { photoInp.addEventListener('change', (function(o, s){ return function(){ if(this.files.length) uploadDefectPhoto(this.files, s, o); this.value=''; }; })(obj, obj.seq)); }
   });
 }
 
 // ════════════════ 照片上傳 ════════════════
 var uploadedPhotos = []; // [{fileName, thumbUrl, viewUrl}]
+var photoUploadsInFlight = 0; // 尚在上傳中的照片數（存檔防呆用）
 
 function initPhotoUpload() {
   var input = document.getElementById('photo-file-input');
@@ -4105,6 +5031,7 @@ function uploadPhoto(file) {
   var statusEl = document.getElementById('photo-upload-status');
   statusEl.style.display = 'block';
   statusEl.textContent = '⏳ 上傳中：' + file.name + '（請稍候…）';
+  photoUploadsInFlight++;
 
   compressImage(file, 1200, 0.8, function(b64, mimeType) {
     fetch(GAS_URL, {
@@ -4113,16 +5040,18 @@ function uploadPhoto(file) {
     })
       .then(function(r) { return r.json(); })
       .then(function(res) {
+        photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
         if (res.ok) {
           uploadedPhotos.push({ fileName: res.fileName, thumbUrl: res.thumbUrl, viewUrl: res.viewUrl });
           renderPhotoGrid();
-          statusEl.textContent = '✓ 上傳成功：' + res.fileName;
-          setTimeout(function(){ statusEl.style.display='none'; }, 2000);
+          statusEl.textContent = photoUploadsInFlight > 0 ? ('⏳ 上傳中…（尚有 ' + photoUploadsInFlight + ' 張）') : ('✓ 上傳成功：' + res.fileName);
+          if (photoUploadsInFlight === 0) setTimeout(function(){ statusEl.style.display='none'; }, 2000);
         } else {
           statusEl.textContent = '⚠ 上傳失敗：' + (res.error || '未知錯誤');
         }
       })
       .catch(function() {
+        photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
         statusEl.textContent = '⚠ 網路錯誤，請重試';
       });
   });
@@ -4178,32 +5107,172 @@ if (document.readyState === 'loading') {
 }
 
 // ════════════════ 缺失照片上傳 ════════════════
-function uploadDefectPhoto(file, seq, obj) {
-  var date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
-  var statusEl = document.getElementById('defect-photo-upload-status');
-  if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳缺失照片中…'; }
+var DEFECT_PHOTO_MAX = 6; // 每筆缺失最多照片數
 
-  compressImage(file, 1200, 0.8, function(b64, mimeType) {
-    fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: 'defect_' + seq + '_' + file.name, photo: b64 })
-    })
-      .then(function(r) { return r.json(); })
-      .then(function(res) {
-        if (res.ok) {
-          obj.photoUrl = res.viewUrl;
-          obj.photoThumb = res.thumbUrl;
-          var thumb = document.getElementById('defect-photo-thumb-' + seq);
-          if (thumb) { thumb.src = res.thumbUrl; thumb.style.display='inline-block'; }
-          if (statusEl) { statusEl.textContent='✓ 缺失照片上傳成功'; setTimeout(function(){ statusEl.style.display='none'; },2000); }
-          renderDefectMobile();
-        } else {
-          if (statusEl) statusEl.textContent='⚠ 上傳失敗：' + (res.error||'未知錯誤');
-        }
+// 統一讀取缺失照片為陣列（相容舊格式的單張 photoUrl/photoThumb）
+function getDefectPhotos(d) {
+  if (!d) return [];
+  if (Array.isArray(d.photos) && d.photos.length) return d.photos;
+  if (d.photoUrl || d.photoThumb) {
+    return [{ url: d.photoUrl || d.photoThumb, thumb: d.photoThumb || d.photoUrl }];
+  }
+  return [];
+}
+
+// 上傳一或多張缺失照片（file 可為單一或 FileList/陣列）
+function uploadDefectPhoto(fileOrList, seq, obj) {
+  if (!Array.isArray(obj.photos)) obj.photos = getDefectPhotos(obj); // 相容舊資料
+  var files = (fileOrList && fileOrList.length !== undefined && !(fileOrList instanceof File))
+    ? Array.from(fileOrList) : [fileOrList];
+  var statusEl = document.getElementById('defect-photo-upload-status');
+
+  // 檢查張數上限
+  var remaining = DEFECT_PHOTO_MAX - obj.photos.length;
+  if (remaining <= 0) {
+    if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⚠ 此缺失已達 ' + DEFECT_PHOTO_MAX + ' 張照片上限'; setTimeout(function(){ statusEl.style.display='none'; },3000); }
+    return;
+  }
+  if (files.length > remaining) {
+    files = files.slice(0, remaining);
+    if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⚠ 僅上傳前 ' + remaining + ' 張（每筆缺失上限 ' + DEFECT_PHOTO_MAX + ' 張）'; }
+  }
+
+  var date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
+  var done = 0, total = files.length;
+  if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳缺失照片中… (0/' + total + ')'; }
+
+  files.forEach(function(file) {
+    photoUploadsInFlight++;
+    compressImage(file, 1200, 0.8, function(b64, mimeType) {
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: 'defect_' + seq + '_' + file.name, photo: b64 })
       })
-      .catch(function() {
-        if (statusEl) statusEl.textContent='⚠ 網路錯誤，請重試';
-      });
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          if (res.ok) {
+            obj.photos.push({ url: res.viewUrl, thumb: res.thumbUrl, fileName: res.fileName });
+          }
+          renderDefectPhotoThumbs(seq, obj);
+          renderDefectMobile();
+          if (statusEl) {
+            if (done >= total) { statusEl.textContent='✓ 缺失照片上傳完成（共 ' + obj.photos.length + ' 張）'; setTimeout(function(){ statusEl.style.display='none'; },2000); }
+            else statusEl.textContent='⏳ 上傳缺失照片中… (' + done + '/' + total + ')';
+          }
+        })
+        .catch(function() {
+          done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          if (statusEl) statusEl.textContent='⚠ 部分照片上傳失敗，請重試';
+        });
+    });
   });
+}
+
+// 渲染桌機缺失表格某筆的照片縮圖區
+function renderDefectPhotoThumbs(seq, obj) {
+  var box = document.getElementById('defect-photo-thumbs-' + seq);
+  if (!box) return;
+  var photos = getDefectPhotos(obj);
+  box.innerHTML = photos.map(function(p, i) {
+    return '<span style="position:relative;display:inline-block;margin:2px;">' +
+      '<img src="' + p.thumb + '" style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:pointer;vertical-align:middle;" onclick="window.open(\'' + p.url + '\',\'_blank\')">' +
+      '<button type="button" onclick="removeDefectPhoto(' + seq + ',' + i + ')" style="position:absolute;top:-6px;right:-6px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;line-height:1;cursor:pointer;padding:0;">✕</button>' +
+      '</span>';
+  }).join('');
+}
+
+// 刪除某筆缺失的第 idx 張照片
+function removeDefectPhoto(seq, idx) {
+  var d = defects.find(function(x){ return x.seq === seq; });
+  if (!d) return;
+  if (!Array.isArray(d.photos)) d.photos = getDefectPhotos(d);
+  d.photos.splice(idx, 1);
+  renderDefectPhotoThumbs(seq, d);
+  renderDefectMobile();
+}
+
+// ════════════════ 工地問題照片 ════════════════
+var ISSUES_PHOTO_MAX = 6;
+var issuesPhotos = []; // [{url, thumb, fileName}]
+
+function initIssuesPhotoUpload() {
+  var input = document.getElementById('issues-photo-input');
+  var btn = document.getElementById('btn-add-issues-photo');
+  if (!input || !btn) return;
+  btn.addEventListener('click', function() { input.click(); });
+  input.addEventListener('change', function() {
+    if (this.files.length) uploadIssuesPhoto(this.files);
+    this.value = '';
+  });
+}
+
+function uploadIssuesPhoto(fileList) {
+  var files = Array.from(fileList);
+  var statusEl = document.getElementById('issues-photo-status');
+  var remaining = ISSUES_PHOTO_MAX - issuesPhotos.length;
+  if (remaining <= 0) {
+    if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⚠ 工地問題照片已達 ' + ISSUES_PHOTO_MAX + ' 張上限'; setTimeout(function(){ statusEl.style.display='none'; },3000); }
+    return;
+  }
+  if (files.length > remaining) {
+    files = files.slice(0, remaining);
+    if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⚠ 僅上傳前 ' + remaining + ' 張（上限 ' + ISSUES_PHOTO_MAX + ' 張）'; }
+  }
+  var date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
+  var done = 0, total = files.length;
+  if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳工地問題照片中… (0/' + total + ')'; }
+
+  files.forEach(function(file) {
+    photoUploadsInFlight++;
+    compressImage(file, 1200, 0.8, function(b64, mimeType) {
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: 'issue_' + file.name, photo: b64 })
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          if (res.ok) issuesPhotos.push({ url: res.viewUrl, thumb: res.thumbUrl, fileName: res.fileName });
+          renderIssuesPhotoGrid();
+          if (statusEl) {
+            if (done >= total) { statusEl.textContent='✓ 工地問題照片上傳完成（共 ' + issuesPhotos.length + ' 張）'; setTimeout(function(){ statusEl.style.display='none'; },2000); }
+            else statusEl.textContent='⏳ 上傳工地問題照片中… (' + done + '/' + total + ')';
+          }
+        })
+        .catch(function() {
+          done++; photoUploadsInFlight = Math.max(0, photoUploadsInFlight - 1);
+          if (statusEl) statusEl.textContent='⚠ 部分照片上傳失敗，請重試';
+        });
+    });
+  });
+}
+
+function renderIssuesPhotoGrid() {
+  var grid = document.getElementById('issues-photo-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  issuesPhotos.forEach(function(p, i) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--bg);';
+    var img = document.createElement('img');
+    img.src = p.thumb;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer;';
+    img.onclick = function() { window.open(p.url, '_blank'); };
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.textContent = '✕';
+    del.style.cssText = 'position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;line-height:1;';
+    del.onclick = function() { issuesPhotos.splice(i,1); renderIssuesPhotoGrid(); };
+    wrap.appendChild(img);
+    wrap.appendChild(del);
+    grid.appendChild(wrap);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initIssuesPhotoUpload);
+} else {
+  initIssuesPhotoUpload();
 }
 </script>
