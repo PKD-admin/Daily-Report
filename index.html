@@ -5071,12 +5071,13 @@ function initPhotoUpload() {
   input.addEventListener('change', function() {
     var files = Array.from(this.files);
     if (!files.length) return;
-    files.forEach(function(file) { uploadPhoto(file); });
+    var base = uploadedPhotos.length; // 這批序號的起始基準
+    files.forEach(function(file, i) { uploadPhoto(file, base + i + 1); });
     this.value = ''; // 清除 input 以便重複選同一張
   });
 }
 
-function uploadPhoto(file) {
+function uploadPhoto(file, seqNo) {
   var date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
   var statusEl = document.getElementById('photo-upload-status');
   statusEl.style.display = 'block';
@@ -5084,10 +5085,11 @@ function uploadPhoto(file) {
   photoUploadsInFlight++;
   updateSaveButtonState();
 
+  var _photoName = '施工_' + date.replace(/-/g,'') + '_' + String(seqNo || (uploadedPhotos.length + 1)).padStart(2,'0') + '.jpg';
   compressImage(file, 1200, 0.8, function(b64, mimeType) {
     fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'uploadPhoto', date: date, mime: mimeType, name: file.name, photo: b64 })
+      body: JSON.stringify({ action: 'uploadPhoto', date: date, mime: mimeType, name: _photoName, photo: b64 })
     })
       .then(function(r) { return r.json(); })
       .then(function(res) {
@@ -5194,13 +5196,15 @@ function uploadDefectPhoto(fileOrList, seq, obj) {
   var done = 0, total = files.length;
   if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳缺失照片中… (0/' + total + ')'; }
 
-  files.forEach(function(file) {
+  var _photoBase = obj.photos.length; // 該缺失已有的照片數，作為序號基準
+  files.forEach(function(file, fi) {
     photoUploadsInFlight++;
     updateSaveButtonState();
+    var _defectName = '缺失_' + date.replace(/-/g,'') + '_' + String(seq).padStart(2,'0') + '_' + String(_photoBase + fi + 1).padStart(2,'0') + '.jpg';
     compressImage(file, 1200, 0.8, function(b64, mimeType) {
       fetch(GAS_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: 'defect_' + seq + '_' + file.name, photo: b64 })
+        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: _defectName, photo: b64 })
       })
         .then(function(r) { return r.json(); })
         .then(function(res) {
@@ -5279,13 +5283,15 @@ function uploadIssuesPhoto(fileList) {
   var done = 0, total = files.length;
   if (statusEl) { statusEl.style.display='block'; statusEl.textContent='⏳ 上傳工地問題照片中… (0/' + total + ')'; }
 
-  files.forEach(function(file) {
+  var _issueBase = issuesPhotos.length; // 已有的工地問題照片數，作為序號基準
+  files.forEach(function(file, fi) {
     photoUploadsInFlight++;
     updateSaveButtonState();
+    var _issueName = '問題_' + date.replace(/-/g,'') + '_' + String(_issueBase + fi + 1).padStart(2,'0') + '.jpg';
     compressImage(file, 1200, 0.8, function(b64, mimeType) {
       fetch(GAS_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: 'issue_' + file.name, photo: b64 })
+        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: _issueName, photo: b64 })
       })
         .then(function(r) { return r.json(); })
         .then(function(res) {
