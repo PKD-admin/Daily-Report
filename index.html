@@ -1134,11 +1134,11 @@
           <div class="card-title"><span class="icon">📊</span> 累積進度</div>
         </div>
         <div class="card-body">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">系統自動加總所有日報表的安裝數量，計算合約完成率。僅「單元」與「直橫料」計入累積；雨遮、風除室、門窗等其他系統僅顯示於當日小計，不併入合約百分比。</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">系統自動加總所有日報表的安裝數量，計算合約完成率。單元系統以「樘」計、直橫料系統以「片」計。僅「單元」與「直橫料」計入累積；雨遮、風除室、門窗等其他系統僅顯示於當日小計，不併入合約百分比。</div>
           <div style="display:grid;grid-template-columns:1fr 130px 130px;gap:8px;margin-bottom:6px;align-items:center;">
             <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">系統</span>
-            <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">累積完成面積（m²）</span>
-            <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">合約總面積（m²）</span>
+            <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">累積完成數量</span>
+            <span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">合約總數量</span>
           </div>
           <!-- 單元系統 -->
           <div style="display:grid;grid-template-columns:1fr 130px 130px;gap:8px;align-items:center;margin-bottom:10px;">
@@ -1387,11 +1387,12 @@
     <!-- ════ 月報表統計 ════ -->
     <div class="view" id="view-monthly">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;">
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <select id="monthly-project" style="min-width:150px;" onchange="renderMonthly()"><option value="">全部工程</option></select>
           <input type="month" id="monthly-month" style="width:160px;" onchange="renderMonthly()">
           <button class="btn btn-ghost" onclick="renderMonthly()">重新整理</button>
         </div>
-        <button class="btn btn-gold" onclick="window.print()">🖨 列印月報</button>
+        <button class="btn btn-gold" onclick="printMonthly()">🖨 列印月報 PDF</button>
       </div>
 
       <div class="month-stat-grid" id="monthly-kpis">
@@ -1403,6 +1404,14 @@
         <div class="card-header"><div class="card-title"><span class="icon">📈</span> 每日施工數量累計</div></div>
         <div class="card-body">
           <div class="chart-wrap"><canvas id="chart-daily" height="200"></canvas></div>
+        </div>
+      </div>
+
+      <!-- 天氣狀況統計 -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">🌤️</span> 天氣狀況統計</div></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chart-weather" height="160"></canvas></div>
         </div>
       </div>
 
@@ -1465,6 +1474,7 @@
         <div class="card-header">
           <div class="card-title"><span class="icon">🔧</span> 缺失追蹤總表</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="tracker-filter-project" style="font-size:12px;" onchange="renderTracker()"><option value="">全部工程</option></select>
             <select id="tracker-filter-status" style="font-size:12px;" onchange="renderTracker()">
               <option value="">全部狀態</option>
               <option value="待改善">待改善</option>
@@ -1522,6 +1532,12 @@
         </div>
         <!-- 篩選列 -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--border);align-items:center;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;color:var(--muted);font-weight:600;">工程</label>
+            <select id="mat-filter-project" style="font-size:12px;min-width:130px;" onchange="renderMaterialsView()">
+              <option value="">全部工程</option>
+            </select>
+          </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
             <label style="font-size:11px;color:var(--muted);font-weight:600;">材料種類</label>
             <select id="mat-filter-type" style="font-size:12px;min-width:130px;" onchange="renderMaterialsView()">
@@ -1601,7 +1617,7 @@
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><div class="card-title"><span class="icon">🏗</span> 工程名稱管理</div></div>
         <div class="card-body">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除工程名稱。可為每個工程設定業主、總承包商、工地負責人與合約面積，日報表選擇工程名稱後會自動帶入這些資料。</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除工程名稱。可為每個工程設定業主、總承包商、工地負責人與合約總數量（單元樘數／直橫料片數），日報表選擇工程名稱後會自動帶入這些資料。</div>
           <div style="display:flex;gap:8px;margin-bottom:12px;">
             <input type="text" id="cfg-new-project" placeholder="輸入新工程名稱…" style="flex:1;" onkeydown="if(event.key==='Enter')addProjectName()">
             <button class="btn btn-primary" onclick="addProjectName()">+ 新增</button>
@@ -1814,18 +1830,18 @@
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><div class="card-title"><span class="icon">📋</span> 合約總量設定</div></div>
         <div class="card-body">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">設定後將顯示於日報表的累積進度欄位，作為計算完成百分比的基準，不可於日報表中手動修改。</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">此為<strong>全域預設值</strong>，當工程未在「工程名稱管理」個別設定合約數量時採用。建議直接於各工程設定，此處可留空。</div>
           <div class="grid-3">
             <div class="field">
-              <label>單元系統合約面積（m²）</label>
-              <input type="number" id="cfg-qty-unit" placeholder="例：3500" min="0" oninput="syncContractTotal()">
+              <label>單元系統合約總數（樘）</label>
+              <input type="number" id="cfg-qty-unit" placeholder="例：350" min="0" oninput="syncContractTotal()">
             </div>
             <div class="field">
-              <label>直橫料系統合約面積（m²）</label>
-              <input type="number" id="cfg-qty-stick" placeholder="例：2000" min="0" oninput="syncContractTotal()">
+              <label>直橫料系統合約總數（片）</label>
+              <input type="number" id="cfg-qty-stick" placeholder="例：1200" min="0" oninput="syncContractTotal()">
             </div>
             <div class="field">
-              <label>合計合約面積（m²，自動加總）</label>
+              <label>合計（自動加總）</label>
               <input type="number" id="cfg-unit" placeholder="自動加總" min="0" readonly style="background:var(--bg);cursor:not-allowed;">
             </div>
           </div>
@@ -1851,8 +1867,13 @@ let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwRepor
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbwq2hHzoMrJJq24nBJhBGMuws3gqXUeC2lmroXY2HtInRYci8cK1svLPIfYtZPRNcYB/exec';
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
+  var arr = (list || []).slice();
+  // 容錯：若已選值不在清單中（例如該項已從設定刪除），仍補一個選項保留舊值，避免重存時遺失
+  if (selected && arr.indexOf(selected) === -1) {
+    arr.push(selected);
+  }
   return `<option value="">${placeholder}</option>` +
-    (list||[]).map(v => `<option${v===(selected||'')?' selected':''} value="${v}">${v}</option>`).join('');
+    arr.map(v => `<option${v===(selected||'')?' selected':''} value="${v}">${v}${(list||[]).indexOf(v)===-1?'（已停用）':''}</option>`).join('');
 }
 let workerRows = [];
 let workerSeq = 0;
@@ -2080,6 +2101,14 @@ function collectDraft() {
     }).filter(Boolean),
     otherWork: getOtherWorkData(),
     equipment: getEquipmentData(),
+    // 補齊：安全事項、備註類、查驗、缺失（含照片）、施工照片、工地問題照片
+    safety:       document.getElementById('f-safety').value,
+    materialNote: document.getElementById('f-material-note').value,
+    photoNote:    document.getElementById('f-photo-note').value,
+    inspections:  JSON.parse(JSON.stringify(inspections)),
+    defects:      JSON.parse(JSON.stringify(defects)),
+    photos:       JSON.parse(JSON.stringify(uploadedPhotos)),
+    issuesPhotos: JSON.parse(JSON.stringify(issuesPhotos)),
     savedAt: new Date().toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}),
   };
   return draft;
@@ -2095,17 +2124,20 @@ function saveDraft() {
 function restoreDraft(draft) {
   if (!draft) return;
   if (draft.date) { document.getElementById('f-date').value = draft.date; updateWeekday(); }
-  if (draft.project) { const s = document.getElementById('f-project'); if ([...s.options].some(o=>o.value===draft.project)) s.value=draft.project; }
+  if (draft.project) setSelectValue('f-project', draft.project);
   if (draft.owner) setSelectValue('f-owner', draft.owner);
-  if (draft.contractor) { const s = document.getElementById('f-contractor'); if ([...s.options].some(o=>o.value===draft.contractor)) s.value=draft.contractor; }
-  if (draft.siteManager) { const s = document.getElementById('f-site-manager'); if ([...s.options].some(o=>o.value===draft.siteManager)) s.value=draft.siteManager; }
-  if (draft.reporter) { const s = document.getElementById('f-reporter'); if ([...s.options].some(o=>o.value===draft.reporter)) s.value=draft.reporter; }
+  if (draft.contractor) setSelectValue('f-contractor', draft.contractor);
+  if (draft.siteManager) setSelectValue('f-site-manager', draft.siteManager);
+  if (draft.reporter) setSelectValue('f-reporter', draft.reporter);
   if (draft.reportNo) document.getElementById('f-report-no').value = draft.reportNo;
   if (draft.weather) { const w = document.querySelector(`input[name="weather"][value="${draft.weather}"]`); if(w) w.checked=true; }
   if (draft.weatherImpact) document.getElementById('f-weather-impact').value = draft.weatherImpact;
   if (draft.tomorrowPlan) document.getElementById('f-tomorrow-plan').value = draft.tomorrowPlan;
   if (draft.issues) document.getElementById('f-issues').value = draft.issues;
   if (draft.remark) document.getElementById('f-remark').value = draft.remark;
+  if (draft.safety) document.getElementById('f-safety').value = draft.safety;
+  if (draft.materialNote) document.getElementById('f-material-note').value = draft.materialNote;
+  if (draft.photoNote) { var pnd = document.getElementById('f-photo-note'); if (pnd) pnd.value = draft.photoNote; }
 
   // 施工進度
   if (draft.progressRows && draft.progressRows.length) {
@@ -2142,6 +2174,26 @@ function restoreDraft(draft) {
     addEquipmentRow();
   }
 
+  // 查驗清單（有資料載入，沒資料補一列空白）
+  renderInspectTable(true);
+  if (draft.inspections && draft.inspections.length) {
+    draft.inspections.forEach(x => addInspectRow(x.item, x.result, x.note));
+  } else {
+    addInspectRow();
+  }
+  // 缺失清單（含照片）
+  renderDefectTable(true);
+  if (draft.defects && draft.defects.length) {
+    draft.defects.forEach(x => addDefectRow(x.desc, x.cat, x.block, x.dir, x.floor, x.status, getDefectPhotos(x)));
+  } else {
+    addDefectRow();
+  }
+  // 施工照片、工地問題照片
+  uploadedPhotos = Array.isArray(draft.photos) ? draft.photos.slice() : [];
+  renderPhotoGrid();
+  issuesPhotos = Array.isArray(draft.issuesPhotos) ? draft.issuesPhotos.slice() : [];
+  renderIssuesPhotoGrid();
+
   updateProgress();
   const el = document.getElementById('draft-status');
   if (el && draft.savedAt) el.textContent = '已還原草稿（' + draft.savedAt + '）';
@@ -2168,7 +2220,7 @@ function syncFromCloud() {
       var changed = false;
       data.reports.forEach(function(cloudReport) {
         if (!cloudReport.date) return;
-        var idx = reports.findIndex(function(r){ return r.date === cloudReport.date; });
+        var idx = reports.findIndex(function(r){ return r.date === cloudReport.date && (r.project||'') === (cloudReport.project||''); });
         if (idx < 0) {
           // 本機沒有這筆 → 直接加入
           reports.push(cloudReport);
@@ -2285,11 +2337,13 @@ var isEditMode = false;
 
 function _setDisp(id, val) { var el = document.getElementById(id); if (el) el.style.display = val; }
 
-var _editEntryDate = null; // 進入編輯時的日期，取消時用來還原
+var _editEntryDate = null;    // 進入編輯時的日期，取消時用來還原
+var _editEntryProject = null; // 進入編輯時的工程
 
 function enterEditMode() {
   isEditMode = true;
   _editEntryDate = document.getElementById('f-date').value; // 記住進入編輯時是哪一天
+  _editEntryProject = document.getElementById('f-project').value; // 記住進入編輯時的工程
   var viewDaily = document.getElementById('view-daily');
   if (viewDaily) viewDaily.classList.remove('view-mode');
   // 桌機 topbar 按鈕
@@ -2321,10 +2375,11 @@ function cancelEdit() {
     return;
   }
   var d = _editEntryDate || document.getElementById('f-date').value;
-  var saved = reports.find(function(r){ return r.date === d; });
+  var p = (_editEntryProject != null) ? _editEntryProject : document.getElementById('f-project').value;
+  var saved = reports.find(function(r){ return r.date === d && (r.project||'') === (p||''); });
   if (saved) {
-    // 該日期已有儲存紀錄 → 從已儲存資料重新載入（loadReport 會切到編輯頁）
-    loadReport(d);
+    // 該工程+日期已有儲存紀錄 → 從已儲存資料重新載入（loadReport 會切到編輯頁）
+    loadReport(d, p||'');
     enterViewMode();
     showToast('已取消編輯，恢復為已儲存的內容');
   } else {
@@ -2419,6 +2474,7 @@ function showView(name) {
   const tags   = {daily:'今日', history:'查閱', monthly:'本月', tracker:'追蹤', materials:'查詢', settings:'設定'};
   document.getElementById('topbar-title-text').textContent = titles[name];
   document.getElementById('topbar-tag').textContent = tags[name];
+  if (name === 'monthly' || name === 'tracker' || name === 'materials') populateProjectFilters();
   if (name === 'history') renderHistory();
   if (name === 'monthly') renderMonthly();
   if (name === 'tracker') renderTracker();
@@ -2444,8 +2500,7 @@ function addWorkerRow(laborUnit, qty, type, dir, floor) {
     </select>
     <input type="number" id="wr-qty-${id}" data-label="人數" min="0" placeholder="人數" style="width:100%;" oninput="updateWorkerTotal()" value="${qty||''}">
     <select id="wr-type-${id}" data-label="工種" style="width:100%;">
-      <option value="">請選擇工種</option>
-      ${(settings.workTypes||DEFAULT_WORK_TYPES).map(t => `<option${t===(type||'')?'  selected':''} value="${t}">${t}</option>`).join('')}
+      ${buildOpts(settings.workTypes||DEFAULT_WORK_TYPES, type, '請選擇工種')}
     </select>
     <select id="wr-dir-${id}" data-label="區域" style="width:100%;">
       ${buildOpts(DIRECTIONS, dir, '區域')}
@@ -2549,15 +2604,17 @@ function updateProgressSubtotal() {
   }
   container.style.display = 'block';
   const grand = keys.reduce((s, k) => s + totals[k], 0);
+  // 依系統給對應單位：單元→樘、直橫料→片、其餘→數量
+  const unitOf = k => (k === '單元' ? '樘' : (k === '直橫料' ? '片' : ''));
   rowsEl.innerHTML = `<table style="width:100%;border-collapse:collapse;">` +
     keys.map(k => `
     <tr>
       <td style="padding:6px 12px;font-size:14px;color:var(--muted);border-bottom:1px solid var(--border);">${k}</td>
-      <td style="padding:6px 12px;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue);text-align:right;border-bottom:1px solid var(--border);">${totals[k]} <span style="font-size:12px;font-weight:400;">m²</span></td>
+      <td style="padding:6px 12px;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue);text-align:right;border-bottom:1px solid var(--border);">${totals[k]} <span style="font-size:12px;font-weight:400;">${unitOf(k)}</span></td>
     </tr>`).join('') +
     `<tr style="background:var(--blue);">
-      <td style="padding:8px 12px;font-size:14px;font-weight:700;color:#fff;border-radius:0 0 0 6px;">合計</td>
-      <td style="padding:8px 12px;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;text-align:right;border-radius:0 0 6px 0;">${grand} <span style="font-size:12px;font-weight:400;">m²</span></td>
+      <td style="padding:8px 12px;font-size:14px;font-weight:700;color:#fff;border-radius:0 0 0 6px;">今日安裝合計</td>
+      <td style="padding:8px 12px;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;text-align:right;border-radius:0 0 6px 0;">${grand}</td>
     </tr>
   </table>`;
 }
@@ -2917,26 +2974,32 @@ function updateWeekday() {
 
 function updateProgress() {
   const currentDate = document.getElementById('f-date').value;
+  const currentProject = document.getElementById('f-project').value || '';
   // 只有「單元」與「直橫料」兩大項目計入合約累積百分比；
   // 其餘系統（雨遮、風除室、門窗…）僅在「今日小計」顯示數量，不併入累積。
   const UNIT_SYS  = ['單元'];
   const STICK_SYS = ['直橫料'];
 
+  // 合約面積：優先用「目前工程」自己設定的，沒有才用全域預設
+  const pInfo = (settings.projectInfo && settings.projectInfo[currentProject]) || {};
+  const contractUnit  = (pInfo.qtyUnit  != null && pInfo.qtyUnit  !== '') ? pInfo.qtyUnit  : (settings.contractQtyUnit  || 0);
+  const contractStick = (pInfo.qtyStick != null && pInfo.qtyStick !== '') ? pInfo.qtyStick : (settings.contractQtyStick || 0);
+
   // 日期未填時：累積清零，合約面積仍顯示
   if (!currentDate) {
-    const tu = settings.contractQtyUnit  || 0;
-    const ts = settings.contractQtyStick || 0;
-    const ta = settings.contractQty      || (tu + ts);
-    document.getElementById('f-cum-unit').value   = '0.0';
+    const tu = contractUnit  || 0;
+    const ts = contractStick || 0;
+    const ta = (tu + ts);
+    document.getElementById('f-cum-unit').value   = '0';
     document.getElementById('f-total-unit').value = tu || '';
-    document.getElementById('f-cum-stick').value  = '0.0';
+    document.getElementById('f-cum-stick').value  = '0';
     document.getElementById('f-total-stick').value= ts || '';
-    document.getElementById('f-cum-done').value   = '0.0';
+    document.getElementById('f-cum-done').value   = '0';
     document.getElementById('f-cum-total').value  = ta || '';
     ['pb-unit','pb-stick','pb-total'].forEach(id => { const el = document.getElementById(id); if(el) el.style.width = '0%'; });
-    document.getElementById('ps-unit').textContent  = tu ? `已完成 0.0 / 合約 ${tu} m²（0.0%）` : '請至設定輸入合約面積';
-    document.getElementById('ps-stick').textContent = ts ? `已完成 0.0 / 合約 ${ts} m²（0.0%）` : '請至設定輸入合約面積';
-    document.getElementById('ps-total').textContent = ta ? `已完成 0.0 / 合約 ${ta} m²（0.0%）` : '請至設定輸入合約面積';
+    document.getElementById('ps-unit').textContent  = tu ? `已完成 0 / 合約 ${tu} 樘（0.0%）` : '請至設定輸入合約總數';
+    document.getElementById('ps-stick').textContent = ts ? `已完成 0 / 合約 ${ts} 片（0.0%）` : '請至設定輸入合約總數';
+    document.getElementById('ps-total').textContent = ta ? `已完成 0 / 合約 ${ta}（0.0%）` : '請至設定輸入合約總數';
     return;
   }
 
@@ -2944,19 +3007,22 @@ function updateProgress() {
     return (rows||[]).filter(r => sysList.includes(r.sys)).reduce((s, r) => s + (r.qty || 0), 0);
   }
 
-  // 今日是否已存檔
-  const alreadySaved = reports.some(r => r.date === currentDate);
+  // 只統計「目前工程」的資料
+  const sameProj = r => (r.project||'') === currentProject;
 
-  // 早於今日的歷史全部累加
+  // 今日是否已存檔（同工程+同日期）
+  const alreadySaved = reports.some(r => r.date === currentDate && sameProj(r));
+
+  // 早於今日、同工程的歷史累加
   let cumUnit = 0, cumStick = 0;
-  reports.filter(r => r.date < currentDate).forEach(r => {
+  reports.filter(r => sameProj(r) && r.date < currentDate).forEach(r => {
     cumUnit  += sumBySys(r.progressRows, UNIT_SYS);
     cumStick += sumBySys(r.progressRows, STICK_SYS);
   });
 
   if (alreadySaved) {
-    // 今日已存檔：從 localStorage 讀今日資料加入
-    const todayReport = reports.find(r => r.date === currentDate);
+    // 今日已存檔：從 localStorage 讀今日（同工程）資料加入
+    const todayReport = reports.find(r => r.date === currentDate && sameProj(r));
     if (todayReport) {
       cumUnit  += sumBySys(todayReport.progressRows, UNIT_SYS);
       cumStick += sumBySys(todayReport.progressRows, STICK_SYS);
@@ -2975,36 +3041,36 @@ function updateProgress() {
   }
 
   const cumTotal = cumUnit + cumStick;
-  const totalUnit  = settings.contractQtyUnit  || 0;
-  const totalStick = settings.contractQtyStick || 0;
-  const totalAll   = (settings.contractQty || 0) || (totalUnit + totalStick);
+  const totalUnit  = contractUnit  || 0;
+  const totalStick = contractStick || 0;
+  const totalAll   = (totalUnit + totalStick);
 
   function pct(done, total) { return total > 0 ? Math.min(100, done / total * 100) : 0; }
-  function label(done, total) {
-    if (!total) return '請至設定輸入合約面積';
-    return `已完成 ${done.toFixed(1)} / 合約 ${total} m²（${pct(done,total).toFixed(1)}%）`;
+  function label(done, total, unit) {
+    if (!total) return '請至設定輸入合約總數';
+    return `已完成 ${done} / 合約 ${total} ${unit}（${pct(done,total).toFixed(1)}%）`;
   }
 
-  // 單元
+  // 單元（樘）
   const pu = pct(cumUnit, totalUnit);
-  document.getElementById('f-cum-unit').value   = totalUnit > 0 ? cumUnit.toFixed(1) : (cumUnit || '');
+  document.getElementById('f-cum-unit').value   = cumUnit || '';
   document.getElementById('f-total-unit').value = totalUnit || '';
   document.getElementById('pb-unit').style.width = pu + '%';
-  document.getElementById('ps-unit').textContent = label(cumUnit, totalUnit);
+  document.getElementById('ps-unit').textContent = label(cumUnit, totalUnit, '樘');
 
-  // 直橫料
+  // 直橫料（片）
   const ps = pct(cumStick, totalStick);
-  document.getElementById('f-cum-stick').value   = totalStick > 0 ? cumStick.toFixed(1) : (cumStick || '');
+  document.getElementById('f-cum-stick').value   = cumStick || '';
   document.getElementById('f-total-stick').value = totalStick || '';
   document.getElementById('pb-stick').style.width = ps + '%';
-  document.getElementById('ps-stick').textContent = label(cumStick, totalStick);
+  document.getElementById('ps-stick').textContent = label(cumStick, totalStick, '片');
 
   // 合計
   const pt = pct(cumTotal, totalAll);
-  document.getElementById('f-cum-done').value  = totalAll > 0 ? cumTotal.toFixed(1) : (cumTotal || '');
+  document.getElementById('f-cum-done').value  = cumTotal || '';
   document.getElementById('f-cum-total').value = totalAll || '';
   document.getElementById('pb-total').style.width = pt + '%';
-  document.getElementById('ps-total').textContent = label(cumTotal, totalAll);
+  document.getElementById('ps-total').textContent = totalAll ? `已完成 ${cumTotal} / 合約 ${totalAll}（${pct(cumTotal,totalAll).toFixed(1)}%）` : '請至設定輸入合約總數';
 }
 
 // ════════════════ Drive Link ════════════════
@@ -3083,7 +3149,7 @@ function saveReport() {
     const panel     = document.getElementById('prog-panel-'+r.id);
     const qty       = document.getElementById('prog-qty-'+r.id);
     if (!block) return null;
-    return { block: block?.value||'', dir: dir?.value||'', floor: floor?.value||'', sys: sys?.value||'', panelType: panel?.value||'', qty: parseInt(qty?.value)||0 };
+    return { block: block?.value||'', dir: dir?.value||'', floor: floor?.value||'', sys: sys?.value||'', panelType: panel?.value||'', qty: Math.max(0, parseInt(qty?.value)||0) };
   }).filter(Boolean);
 
   const mats = materialRows.map(r => {
@@ -3095,6 +3161,29 @@ function saveReport() {
     if (!type) return null;
     return { type: type.value, qty: qty?.value||'', receiver: receiver?.value||'', location: location?.value||'', nextDate: nextDate?.value||'' };
   }).filter(Boolean);
+
+  // 防呆：檢查是否為「幾乎空白」的日報表（沒填任何實質內容）
+  const workerDataChk = getWorkerData();
+  const otherWorkChk  = getOtherWorkData();
+  const hasWorker   = workerDataChk.some(w => (parseInt(w.qty)||0) > 0 || (w.laborUnit||'').trim());
+  const hasProgress = rows.length > 0;
+  const hasOther    = otherWorkChk.some(w => (w.item||'').trim() || (w.desc||'').trim());
+  const hasMaterial = mats.length > 0;
+  const hasInspect  = inspections.some(x => (x.item||'').trim());
+  const hasDefect   = defects.some(d => (d.desc||'').trim() || getDefectPhotos(d).length);
+  const hasPhoto    = uploadedPhotos.length > 0;
+  const hasIssue    = (document.getElementById('f-issues').value||'').trim();
+  if (!hasWorker && !hasProgress && !hasOther && !hasMaterial && !hasInspect && !hasDefect && !hasPhoto && !hasIssue) {
+    if (!confirm('這份日報表除了基本資訊外，沒有填寫任何工班、進度、材料、查驗、缺失或照片。確定要儲存空白日報表嗎？')) return;
+  }
+
+  // 防呆：若同工程同日期已有紀錄，且不是「當初載入來編輯的那一筆」，覆蓋前提醒
+  // （載入既有報表來更新是正常操作，不提醒；只有新建卻撞到已存在的才提醒）
+  const existing = reports.find(r => r.date === date && (r.project||'') === (projectVal||''));
+  const isEditingSame = (_editEntryDate === date && (_editEntryProject||'') === (projectVal||''));
+  if (existing && !isEditingSame) {
+    if (!confirm('「' + (projectVal||'（未指定工程）') + '」在 ' + date + ' 已有一份日報表，儲存將覆蓋原本內容。確定覆蓋嗎？')) return;
+  }
 
   const report = {
     date,
@@ -3113,7 +3202,7 @@ function saveReport() {
     otherWork: getOtherWorkData(),
     todayQty: rows.reduce((s,r) => s+r.qty, 0),
     cumDone: parseFloat(document.getElementById('f-cum-done').value)||0,
-    cumTotal: settings.contractQty || 0,
+    cumTotal: parseFloat(document.getElementById('f-cum-total').value)||0,
     tomorrowPlan: document.getElementById('f-tomorrow-plan').value,
     equipment: getEquipmentData(),
     materials: mats,
@@ -3131,8 +3220,8 @@ function saveReport() {
     savedAt: new Date().toISOString(),
   };
 
-  // Upsert by date
-  const idx = reports.findIndex(r => r.date === date);
+  // Upsert by 工程+日期（同一天不同工程各自獨立，不會互相覆蓋）
+  const idx = reports.findIndex(r => r.date === date && (r.project||'') === (report.project||''));
   if (idx >= 0) reports[idx] = report;
   else reports.push(report);
   reports.sort((a,b) => b.date.localeCompare(a.date));
@@ -3364,9 +3453,9 @@ function printReport() {
   // 累積進度
   html += '<section><div class="sec-title">累積進度</div>';
   html += '<div class="progress-grid">';
-  html += '<div class="progress-box"><div class="progress-label">單元系統</div><div class="progress-val">'+esc(cumUnit)+' m²</div><div class="progress-pct">'+esc(psUnit)+'</div></div>';
-  html += '<div class="progress-box"><div class="progress-label">直橫料系統</div><div class="progress-val">'+esc(cumStick)+' m²</div><div class="progress-pct">'+esc(psStick)+'</div></div>';
-  html += '<div class="progress-box"><div class="progress-label">合計</div><div class="progress-val">'+esc(cumDone)+' / '+esc(cumTotal)+' m²</div><div class="progress-pct">'+esc(psTotal)+'</div></div>';
+  html += '<div class="progress-box"><div class="progress-label">單元系統</div><div class="progress-val">'+esc(cumUnit)+' 樘</div><div class="progress-pct">'+esc(psUnit)+'</div></div>';
+  html += '<div class="progress-box"><div class="progress-label">直橫料系統</div><div class="progress-val">'+esc(cumStick)+' 片</div><div class="progress-pct">'+esc(psStick)+'</div></div>';
+  html += '<div class="progress-box"><div class="progress-label">合計</div><div class="progress-val">'+esc(cumDone)+' / '+esc(cumTotal)+'</div><div class="progress-pct">'+esc(psTotal)+'</div></div>';
   html += '</div></section>';
 
   // 機具設備
@@ -3445,8 +3534,9 @@ function renderHistory() {
     const pct = r.cumTotal > 0 ? (r.cumDone/r.cumTotal*100).toFixed(1)+'%' : '—';
     const defCount = (r.defects||[]).length;
     const weatherIcon = {晴天:'☀️',多雲:'⛅',雨天:'🌧','颱風/停工':'🌀'}[r.weather] || r.weather;
+    const proj = (r.project||'').replace(/'/g,"\\'");
     return `<tr>
-      <td><strong>${r.date}</strong></td>
+      <td><strong>${r.date}</strong><div style="font-size:11px;color:var(--muted);margin-top:2px;">${r.project||'（未指定工程）'}</div></td>
       <td>${weatherIcon} ${r.weather||'—'}</td>
       <td class="num-cell">${workers}</td>
       <td class="num-cell">${r.todayQty||0}</td>
@@ -3458,32 +3548,26 @@ function renderHistory() {
       </td>
       <td class="num-cell">${defCount > 0 ? '<span class="badge badge-danger">'+defCount+'</span>' : '<span class="badge badge-ok">0</span>'}</td>
       <td>
-        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;" onclick="loadReport('${r.date}')">載入</button>
-        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;color:var(--danger);" onclick="deleteReport('${r.date}')">刪除</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;" onclick="loadReport('${r.date}','${proj}')">載入</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;color:var(--danger);" onclick="deleteReport('${r.date}','${proj}')">刪除</button>
       </td>
     </tr>`;
   }).join('');
 }
 
-function loadReport(date) {
-  const r = reports.find(x => x.date === date);
+function loadReport(date, project) {
+  const r = (project !== undefined && project !== null)
+    ? reports.find(x => x.date === date && (x.project||'') === project)
+    : reports.find(x => x.date === date);
   if (!r) return;
   document.getElementById('f-date').value = r.date;
   updateWeekday();
-  const pSel = document.getElementById('f-project');
-  if ([...pSel.options].some(o => o.value === r.project)) pSel.value = r.project;
-  else pSel.value = '';
+  setSelectValue('f-project', r.project || '');
   setSelectValue('f-owner', r.owner || '');
-  const cSel = document.getElementById('f-contractor');
-  if ([...cSel.options].some(o => o.value === r.contractor)) cSel.value = r.contractor;
-  else cSel.value = '';
-  const smSel = document.getElementById('f-site-manager');
-  if ([...smSel.options].some(o => o.value === r.siteManager)) smSel.value = r.siteManager;
-  else smSel.value = '';
+  setSelectValue('f-contractor', r.contractor || '');
+  setSelectValue('f-site-manager', r.siteManager || '');
   document.getElementById('f-report-no').value     = r.reportNo    || '';
-  const rSel = document.getElementById('f-reporter');
-  if ([...rSel.options].some(o => o.value === r.reporter)) rSel.value = r.reporter;
-  else rSel.value = '';
+  setSelectValue('f-reporter', r.reporter || '');
   if (r.weather) {
     const wRadio = document.querySelector(`input[name="weather"][value="${r.weather}"]`);
     if (wRadio) wRadio.checked = true;
@@ -3562,16 +3646,18 @@ function deleteFilteredReports() {
   });
 }
 
-function deleteReport(date) {
-  if (!confirm('確定刪除 ' + date + ' 的日報表？此操作無法復原。')) return;
-  reports = reports.filter(r => r.date !== date);
+function deleteReport(date, project) {
+  var hasProj = (project !== undefined && project !== null);
+  var label = date + (hasProj && project ? '（' + project + '）' : '');
+  if (!confirm('確定刪除 ' + label + ' 的日報表？此操作無法復原。')) return;
+  reports = reports.filter(r => hasProj ? !(r.date === date && (r.project||'') === project) : r.date !== date);
   try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
   renderHistory();
   showToast('刪除中，同步雲端…');
-  fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', date: date }) })
+  fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', date: date, byProject: hasProj, project: (hasProj ? project : '') }) })
     .then(r => r.json())
     .then(res => {
-      if (res.ok) showToast('已刪除 ' + date + ' 的日報表（含雲端）');
+      if (res.ok) showToast('已刪除 ' + label + ' 的日報表（含雲端）');
       else showToast('本機已刪除，雲端刪除失敗：' + (res.error || ''));
     })
     .catch(() => showToast('本機已刪除，雲端連線失敗'));
@@ -3580,7 +3666,11 @@ function deleteReport(date) {
 // ════════════════ Monthly ════════════════
 function renderMonthly() {
   const ym = document.getElementById('monthly-month').value;
-  const data = ym ? reports.filter(r => r.date.startsWith(ym)) : reports;
+  const projSel = document.getElementById('monthly-project');
+  const proj = projSel ? projSel.value : '';
+  let data = reports.slice();
+  if (ym)   data = data.filter(r => r.date.startsWith(ym));
+  if (proj) data = data.filter(r => (r.project||'') === proj);
   data.sort((a,b) => a.date.localeCompare(b.date));
 
   // KPIs
@@ -3592,9 +3682,9 @@ function renderMonthly() {
   const pct = lastR && lastR.cumTotal ? (lastR.cumDone/lastR.cumTotal*100).toFixed(1)+'%' : '—';
 
   document.getElementById('monthly-kpis').innerHTML = `
-    <div class="kpi-card accent-blue"><div class="kpi-label">本月施工量</div><div class="kpi-value">${totalQty}</div><div class="kpi-sub">片 / 組（今月累計）</div></div>
+    <div class="kpi-card accent-blue"><div class="kpi-label">本月施工量</div><div class="kpi-value">${totalQty}</div><div class="kpi-sub">樘 / 片（今月累計）</div></div>
     <div class="kpi-card accent-ok"><div class="kpi-label">累積安裝進度</div><div class="kpi-value">${pct}</div><div class="kpi-sub">合約完成率</div></div>
-    <div class="kpi-card accent-gold"><div class="kpi-label">出勤總人次</div><div class="kpi-value">${totalWorkers}</div><div class="kpi-sub">全月各工種合計</div></div>
+    <div class="kpi-card accent-gold"><div class="kpi-label">出勤總工日</div><div class="kpi-value">${totalWorkers}</div><div class="kpi-sub">全月各工種人日合計</div></div>
     <div class="kpi-card accent-danger"><div class="kpi-label">天氣停工天數</div><div class="kpi-value">${stoppedDays}</div><div class="kpi-sub">全日停工或颱風</div></div>
   `;
 
@@ -3611,6 +3701,153 @@ function renderMonthly() {
   drawWeatherChart(data);
   drawWorkerChart(data);
   renderMonthlyEquipment(data);
+}
+
+// ════════════════ 月報表 列印 PDF ════════════════
+function printMonthly() {
+  const ym   = document.getElementById('monthly-month').value;
+  const projSel = document.getElementById('monthly-project');
+  const proj = projSel ? projSel.value : '';
+
+  let data = reports.slice();
+  if (ym)   data = data.filter(r => r.date.startsWith(ym));
+  if (proj) data = data.filter(r => (r.project||'') === proj);
+  data.sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!data.length) { showToast('此條件下尚無資料可列印'); return; }
+
+  function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ── 統計 ──
+  const totalQty     = data.reduce((s,r)=>s+(r.todayQty||0),0);
+  const totalWorkers = data.reduce((s,r)=>s+(r.totalWorkers||0),0);
+  const allDefects   = data.flatMap(r=>r.defects||[]);
+  const stoppedDays  = data.filter(r=>r.weatherImpact==='全日停工'||r.weather==='颱風/停工').length;
+  const lastR        = data[data.length-1];
+  const pctVal       = lastR && lastR.cumTotal ? (lastR.cumDone/lastR.cumTotal*100).toFixed(1)+'%' : '—';
+  const defFixed     = allDefects.filter(d=>d.status==='已改善').length;
+  const defOpen      = allDefects.length - defFixed;
+  const defRate      = allDefects.length ? (defFixed/allDefects.length*100).toFixed(0)+'%' : '—';
+
+  // ── 每日施工量表 ──
+  let dailyRows = data.map(r => {
+    const w = {晴天:'晴',多雲:'多雲',雨天:'雨','颱風/停工':'颱風/停工'}[r.weather]||r.weather||'—';
+    return '<tr><td>'+esc(r.date)+'</td><td>'+esc(w)+'</td><td>'+(r.totalWorkers||0)+'</td><td>'+(r.todayQty||0)+'</td><td>'+((r.defects||[]).length)+'</td></tr>';
+  }).join('');
+
+  // ── 天氣統計 ──
+  const wCount = {};
+  data.forEach(r => { const k = r.weather||'未填'; wCount[k] = (wCount[k]||0)+1; });
+  let weatherRows = Object.keys(wCount).map(k => '<tr><td>'+esc(k)+'</td><td>'+wCount[k]+' 天</td></tr>').join('');
+
+  // ── 工班出勤（依勞務單位彙整）──
+  const workerMap = {};
+  data.forEach(r => (r.workerData||[]).forEach(w => {
+    const q = parseInt(w.qty)||0; if (!q && !w.laborUnit) return;
+    const k = w.laborUnit || '（未填工班）';
+    workerMap[k] = (workerMap[k]||0) + q;
+  }));
+  let workerRowsHtml = Object.keys(workerMap).sort((a,b)=>workerMap[b]-workerMap[a])
+    .map(k => '<tr><td>'+esc(k)+'</td><td>'+workerMap[k]+' 工日</td></tr>').join('');
+  if (!workerRowsHtml) workerRowsHtml = '<tr><td colspan="2" style="color:#999;">無工班明細</td></tr>';
+
+  // ── 設備累積天數 ──
+  const eqMap = {};
+  data.forEach(r => (r.equipment||[]).forEach(eq => {
+    if (!eq.type) return;
+    const k = eq.type + '||' + (eq.unit||'');
+    if (!eqMap[k]) eqMap[k] = { type: eq.type, unit: eq.unit||'—', count:0, days:0 };
+    eqMap[k].count++; eqMap[k].days += (parseInt(eq.days)||0);
+  }));
+  let eqRows = Object.values(eqMap).sort((a,b)=>b.days-a.days)
+    .map(e => '<tr><td class="txt">'+esc(e.type)+'</td><td>'+esc(e.unit)+'</td><td>'+e.count+'</td><td>'+e.days+'</td></tr>').join('');
+  if (!eqRows) eqRows = '<tr><td colspan="4" style="color:#999;">無設備資料</td></tr>';
+
+  // ── 每日施工量長條圖：用 canvas 轉圖 ──
+  let chartImg = '';
+  try {
+    const cv = document.getElementById('chart-daily');
+    if (cv && cv.width) chartImg = '<img src="'+cv.toDataURL('image/png')+'" style="width:100%;border:1px solid #000;border-radius:3px;margin-top:4px;">';
+  } catch(e) {}
+
+  const projectLabel = proj || '全部工程';
+  const monthLabel   = ym || '全部月份';
+
+  let html = '<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><title>月報表 '+esc(monthLabel)+'</title><style>';
+  html += '*{box-sizing:border-box;margin:0;padding:0;}';
+  html += '@page{size:A4 portrait;margin:14mm 12mm;}';
+  html += 'html,body{width:100%;}';
+  html += 'body{font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;font-size:12px;color:#000;background:#fff;line-height:1.5;}';
+  html += '.page{width:100%;max-width:186mm;margin:0 auto;}';
+  html += 'h1{font-size:19px;font-weight:800;color:#000;}';
+  html += '.subtitle{font-size:13px;color:#000;margin-top:4px;}';
+  html += '.header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:2.5px solid #000;padding-bottom:10px;margin-bottom:18px;}';
+  html += '.header-right{text-align:right;font-size:11px;color:#000;line-height:1.9;white-space:nowrap;}';
+  html += 'section{margin-bottom:18px;break-inside:avoid;}';
+  html += '.sec-title{font-size:13px;font-weight:800;color:#000;border-left:4px solid #000;padding-left:9px;margin-bottom:8px;}';
+  html += '.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}';
+  html += '.kpi-box{border:1px solid #000;border-radius:4px;padding:10px 8px;text-align:center;}';
+  html += '.kpi-num{font-size:20px;font-weight:800;}';
+  html += '.kpi-lbl{font-size:10px;color:#000;margin-top:3px;}';
+  html += 'table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;}';
+  html += 'th{background:transparent;color:#000;font-weight:800;padding:6px 5px;border:1px solid #000;border-bottom:2px solid #000;font-size:10.5px;text-align:center;}';
+  html += 'td{padding:6px 5px;border:1px solid #000;text-align:center;word-break:break-word;}';
+  html += 'td.txt{text-align:left;}';
+  html += '.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}';
+  html += '.footer{border-top:1px solid #000;padding-top:8px;margin-top:20px;display:flex;justify-content:space-between;font-size:10px;color:#000;}';
+  html += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}';
+  html += '</style></head><body><div class="page">';
+
+  // 頁首
+  html += '<div class="header"><div><h1>帷幕牆工程 月報表</h1><div class="subtitle">'+esc(projectLabel)+'</div></div>';
+  html += '<div class="header-right"><div><strong>統計月份：</strong>'+esc(monthLabel)+'</div><div><strong>資料筆數：</strong>'+data.length+' 天</div><div><strong>列印時間：</strong>'+new Date().toLocaleString('zh-TW',{hour12:false})+'</div></div></div>';
+
+  // KPI
+  html += '<section><div class="sec-title">本月摘要</div><div class="kpi-grid">';
+  html += '<div class="kpi-box"><div class="kpi-num">'+totalQty+'</div><div class="kpi-lbl">本月施工量（樘/片）</div></div>';
+  html += '<div class="kpi-box"><div class="kpi-num">'+pctVal+'</div><div class="kpi-lbl">累積合約完成率</div></div>';
+  html += '<div class="kpi-box"><div class="kpi-num">'+totalWorkers+'</div><div class="kpi-lbl">出勤總工日</div></div>';
+  html += '<div class="kpi-box"><div class="kpi-num">'+stoppedDays+'</div><div class="kpi-lbl">天氣停工天數</div></div>';
+  html += '</div></section>';
+
+  // 每日施工量圖
+  if (chartImg) {
+    html += '<section><div class="sec-title">每日施工數量</div>'+chartImg+'</section>';
+  }
+
+  // 每日明細表
+  html += '<section><div class="sec-title">每日施工明細</div>';
+  html += '<table><colgroup><col style="width:24%"><col style="width:20%"><col style="width:18%"><col style="width:20%"><col style="width:18%"></colgroup>';
+  html += '<thead><tr><th>日期</th><th>天氣</th><th>在場人數</th><th>施工量</th><th>缺失數</th></tr></thead><tbody>'+dailyRows+'</tbody></table></section>';
+
+  // 天氣 + 工班（並排）
+  html += '<section><div class="two-col">';
+  html += '<div><div class="sec-title">天氣統計</div><table><colgroup><col style="width:60%"><col style="width:40%"></colgroup><thead><tr><th>天氣</th><th>天數</th></tr></thead><tbody>'+weatherRows+'</tbody></table></div>';
+  html += '<div><div class="sec-title">工班出勤（工日）</div><table><colgroup><col style="width:60%"><col style="width:40%"></colgroup><thead><tr><th>勞務單位</th><th>工日</th></tr></thead><tbody>'+workerRowsHtml+'</tbody></table></div>';
+  html += '</div></section>';
+
+  // 設備累積天數
+  html += '<section><div class="sec-title">設備機具累積使用天數</div>';
+  html += '<table><colgroup><col style="width:34%"><col style="width:24%"><col style="width:20%"><col style="width:22%"></colgroup>';
+  html += '<thead><tr><th>設備名稱</th><th>單位</th><th>使用次數</th><th>累積天數</th></tr></thead><tbody>'+eqRows+'</tbody></table></section>';
+
+  // 缺失統計
+  html += '<section><div class="sec-title">缺失統計</div><div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">';
+  html += '<div class="kpi-box"><div class="kpi-num">'+allDefects.length+'</div><div class="kpi-lbl">缺失總數</div></div>';
+  html += '<div class="kpi-box"><div class="kpi-num">'+defFixed+'</div><div class="kpi-lbl">已改善</div></div>';
+  html += '<div class="kpi-box"><div class="kpi-num">'+defOpen+'</div><div class="kpi-lbl">待改善</div></div>';
+  html += '<div class="kpi-box"><div class="kpi-num">'+defRate+'</div><div class="kpi-lbl">改善率</div></div>';
+  html += '</div></section>';
+
+  html += '<div class="footer"><span>'+esc(projectLabel)+'　月報表　'+esc(monthLabel)+'</span><span>PKD 科鐽工程顧問有限公司</span></div>';
+  html += '</div></body></html>';
+
+  const win = window.open('', '_blank');
+  if (!win) { showToast('請允許瀏覽器開啟新視窗以列印'); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); }, 500);
 }
 
 function drawDailyChart(data) {
@@ -3793,16 +4030,18 @@ function renderTracker() {
       blocks.map(function(b) { return '<option value="' + b + '"' + (b===blockVal?' selected':'') + '>' + b + '</option>'; }).join('');
   }
 
+  var filterProject = (document.getElementById('tracker-filter-project')||{}).value || '';
   var filterStatus = (document.getElementById('tracker-filter-status')||{}).value || '';
   var filterCat    = (document.getElementById('tracker-filter-cat')||{}).value    || '';
   var filterBlock  = blockVal;
 
-  // 彙整所有日報的缺失，記錄來源日期與日報索引
+  // 彙整所有日報的缺失，記錄來源工程/日期/索引
   var all = [];
   reports.forEach(function(r, ri) {
     (r.defects || []).forEach(function(d, di) {
       all.push({
         date:   r.date || '',
+        project: r.project || '',
         ri:     ri,
         di:     di,
         desc:   d.desc   || '',
@@ -3816,6 +4055,8 @@ function renderTracker() {
       });
     });
   });
+  // 先套用工程篩選（KPI 與清單都以此為基準）
+  if (filterProject) all = all.filter(function(d){ return d.project === filterProject; });
 
   // 統計 KPI
   var total   = all.length;
@@ -3919,10 +4160,14 @@ function renderTracker() {
     statusSel.addEventListener('change', function() {
       var newStatus = this.value;
       var now = new Date().toISOString().slice(0,10);
-      // 寫回 reports 陣列
-      if (reports[d.ri] && Array.isArray(reports[d.ri].defects) && reports[d.ri].defects[d.di]) {
-        reports[d.ri].defects[d.di].status = newStatus;
-        reports[d.ri].defects[d.di].updatedAt = now;
+      // 用 工程+日期 找到正確的日報，再用 di 定位缺失（比位置索引穩健）
+      var tgt = reports.find(function(rr){ return rr.date === d.date && (rr.project||'') === (d.project||''); });
+      if (tgt && Array.isArray(tgt.defects) && tgt.defects[d.di]) {
+        tgt.defects[d.di].status = newStatus;
+        tgt.defects[d.di].updatedAt = now;
+        // 同步推送雲端，讓其他裝置看到最新狀態
+        var payload = Object.assign({}, tgt);
+        fetch(GAS_URL, { method:'POST', body: JSON.stringify({ action:'save', data: payload }) }).catch(function(){});
       }
       try { localStorage.setItem('cwReports', JSON.stringify(reports)); } catch(e) {}
       // 更新顏色
@@ -4019,13 +4264,17 @@ function renderMonthlyEquipment(data) {
 // ════════════════ 進料查詢 ════════════════
 
 function renderMaterialsView() {
+  var projSel = document.getElementById('mat-filter-project');
+  var projVal = projSel ? projSel.value : '';
   // 彙整所有日報的進料紀錄（不限月份）
   var all = [];
   reports.forEach(function(r) {
+    if (projVal && (r.project||'') !== projVal) return; // 工程篩選
     (r.materials || []).forEach(function(m) {
       if (!m.type && !m.qty && !m.receiver) return;
       all.push({
         date:     r.date     || '',
+        project:  r.project   || '',
         type:     m.type     || '',
         qty:      m.qty      || '',
         receiver: m.receiver || '',
@@ -4140,6 +4389,18 @@ function exportMaterialsCSV() {
   a.click(); URL.revokeObjectURL(url);
 }
 
+// 填入統計頁的「工程篩選」下拉（月報/缺失/進料共用）
+function populateProjectFilters() {
+  var projects = settings.projects || [];
+  ['monthly-project','tracker-filter-project','mat-filter-project'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">全部工程</option>' +
+      projects.map(function(p){ return '<option value="'+p+'"'+(p===cur?' selected':'')+'>'+p+'</option>'; }).join('');
+  });
+}
+
 // ════════════════ Project Names ════════════════
 function renderProjectDropdown() {
   const sel = document.getElementById('f-project');
@@ -4217,8 +4478,8 @@ function renderProjectList() {
           <div class="field"><label style="font-size:11px;">業主</label><input type="text" id="proj-owner-${i}" value="${esc(info.owner)}" placeholder="業主名稱"></div>
           <div class="field"><label style="font-size:11px;">總承包商</label><input type="text" id="proj-contractor-${i}" value="${esc(info.contractor)}" placeholder="總承包商"></div>
           <div class="field"><label style="font-size:11px;">工地負責人</label><input type="text" id="proj-manager-${i}" value="${esc(info.siteManager)}" placeholder="工地負責人"></div>
-          <div class="field"><label style="font-size:11px;">單元系統合約面積（m²）</label><input type="number" id="proj-qtyunit-${i}" value="${esc(info.qtyUnit)}" placeholder="例：3500" min="0"></div>
-          <div class="field"><label style="font-size:11px;">直橫料系統合約面積（m²）</label><input type="number" id="proj-qtystick-${i}" value="${esc(info.qtyStick)}" placeholder="例：2000" min="0"></div>
+          <div class="field"><label style="font-size:11px;">單元系統合約總數（樘）</label><input type="number" id="proj-qtyunit-${i}" value="${esc(info.qtyUnit)}" placeholder="例：350" min="0"></div>
+          <div class="field"><label style="font-size:11px;">直橫料系統合約總數（片）</label><input type="number" id="proj-qtystick-${i}" value="${esc(info.qtyStick)}" placeholder="例：1200" min="0"></div>
           <div></div>
         </div>
         <div style="margin-top:10px;display:flex;justify-content:flex-end;">
