@@ -1002,7 +1002,9 @@
           <div class="grid-3" style="margin-top:12px;">
             <div class="field">
               <label>業主</label>
-              <input type="text" id="f-owner" placeholder="業主名稱">
+              <select id="f-owner">
+                <option value="">請選擇業主</option>
+              </select>
             </div>
             <div class="field">
               <label>總承包商</label>
@@ -1608,6 +1610,19 @@
         </div>
       </div>
 
+      <!-- 業主管理 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title"><span class="icon">🏛</span> 業主管理</div></div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">新增、刪除業主，將出現在日報表的業主下拉選單中。</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input type="text" id="cfg-new-owner" placeholder="輸入業主名稱…" style="flex:1;" onkeydown="if(event.key==='Enter')addOwnerName()">
+            <button class="btn btn-primary" onclick="addOwnerName()">+ 新增</button>
+          </div>
+          <div id="owner-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+      </div>
+
       <!-- 總承包商管理 -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><div class="card-title"><span class="icon">🏢</span> 總承包商管理</div></div>
@@ -1824,12 +1839,8 @@
       <div class="card">
         <div class="card-header"><div class="card-title"><span class="icon">⚙️</span> 其他設定</div></div>
         <div class="card-body">
-          <div class="field">
-            <label>GAS 網址</label>
-            <input type="text" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:12px;">
-            <div style="font-size:11px;color:var(--muted);margin-top:4px;">部署 Apps Script 後貼上新網址，按儲存設定即生效。</div>
-          </div>
-          <div style="margin-top:16px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">合約面積等設定變更後，請按下方按鈕儲存。</div>
+          <div>
             <button class="btn btn-primary" onclick="saveSettings()">儲存設定</button>
           </div>
         </div>
@@ -1846,7 +1857,8 @@
 <script>
 // ════════════════ State ════════════════
 let reports = (function(){ try { return JSON.parse(localStorage.getItem('cwReports') || '[]'); } catch(e) { return []; } })();
-var GAS_URL = (function(){ var s = ''; try { s = JSON.parse(localStorage.getItem('cwSettings') || '{}').gasUrl || ''; } catch(e){} return s || 'https://script.google.com/macros/s/AKfycbwIGm1EQmRnWN8FK5OJKM12xx2gT96ANVVqiitJTi_Z5E8SU3tUnG7DJUCHqyLMFR-9/exec'; })();
+// GAS 網址固定寫在此處，不開放後台修改。若日後 Apps Script 重新部署且網址改變，只需改這一行。
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwq2hHzoMrJJq24nBJhBGMuws3gqXUeC2lmroXY2HtInRYci8cK1svLPIfYtZPRNcYB/exec';
 const DIRECTIONS = ['東','西','南','北'];
 function buildOpts(list, selected, placeholder) {
   return `<option value="">${placeholder}</option>` +
@@ -1886,6 +1898,7 @@ let settings = (function() {
   }
   if (!s.projectInfo || typeof s.projectInfo !== 'object') s.projectInfo = {};
   if (!Array.isArray(s.reporters)) s.reporters = ['李學儒'];
+  if (!Array.isArray(s.owners)) s.owners = ['台灣肥料股份有限公司'];
   if (!Array.isArray(s.contractors)) s.contractors = ['品興營造'];
   if (!Array.isArray(s.laborUnits)) s.laborUnits = ['壯觀','易琦','鴻宸','永恩','哲緯','威廷','睿展','伍銓','言荃'];
   if (!Array.isArray(s.floors) || !s.floors.length || s.floors[s.floors.length-1] === '22F') s.floors = [...DEFAULT_FLOORS];
@@ -1949,6 +1962,8 @@ function init() {
   renderProjectList();
   renderReporterDropdown();
   renderReporterList();
+  renderOwnerDropdown();
+  renderOwnerList();
   renderContractorDropdown();
   renderContractorList();
   renderLaborUnitDropdown();
@@ -1971,8 +1986,6 @@ function init() {
     var drEl = document.getElementById('f-drive-root');
     if (drEl) drEl.value = settings.driveId;
   }
-  var gasEl = document.getElementById('cfg-gas-url');
-  if (gasEl) gasEl.value = settings.gasUrl || GAS_URL;
   if (settings.contractQtyUnit) document.getElementById('cfg-qty-unit').value  = settings.contractQtyUnit;
   if (settings.contractQtyStick) document.getElementById('cfg-qty-stick').value = settings.contractQtyStick;
   const totalAll = (settings.contractQtyUnit || 0) + (settings.contractQtyStick || 0);
@@ -2093,7 +2106,7 @@ function restoreDraft(draft) {
   if (!draft) return;
   if (draft.date) { document.getElementById('f-date').value = draft.date; updateWeekday(); }
   if (draft.project) { const s = document.getElementById('f-project'); if ([...s.options].some(o=>o.value===draft.project)) s.value=draft.project; }
-  if (draft.owner) document.getElementById('f-owner').value = draft.owner;
+  if (draft.owner) setSelectValue('f-owner', draft.owner);
   if (draft.contractor) { const s = document.getElementById('f-contractor'); if ([...s.options].some(o=>o.value===draft.contractor)) s.value=draft.contractor; }
   if (draft.siteManager) { const s = document.getElementById('f-site-manager'); if ([...s.options].some(o=>o.value===draft.siteManager)) s.value=draft.siteManager; }
   if (draft.reporter) { const s = document.getElementById('f-reporter'); if ([...s.options].some(o=>o.value===draft.reporter)) s.value=draft.reporter; }
@@ -2229,10 +2242,8 @@ function loadSettingsFromCloud() {
     .then(function(data) {
       if (!data.ok || !data.settings) return;
       var cloud = data.settings;
-      // 用雲端設定覆蓋本機（保留本機的 gasUrl，避免把網址洗掉）
-      var keepGasUrl = settings.gasUrl;
       settings = cloud;
-      if (keepGasUrl) settings.gasUrl = keepGasUrl;
+      if (settings.gasUrl) delete settings.gasUrl; // GAS 網址已改為程式碼固定，清掉殘留設定
       // 清理已淘汰的預設工程名稱（雲端可能還存著）
       var cloudDirty = false;
       if (Array.isArray(settings.projects)) {
@@ -2257,6 +2268,7 @@ function refreshAllSettingViews() {
   try {
     renderProjectDropdown();   renderProjectList();
     renderReporterDropdown();  renderReporterList();
+    renderOwnerDropdown();      renderOwnerList();
     renderContractorDropdown();renderContractorList();
     renderLaborUnitDropdown(); renderLaborUnitList();
     renderSiteManagerDropdown();renderSiteManagerList();
@@ -3471,7 +3483,7 @@ function loadReport(date) {
   const pSel = document.getElementById('f-project');
   if ([...pSel.options].some(o => o.value === r.project)) pSel.value = r.project;
   else pSel.value = '';
-  document.getElementById('f-owner').value         = r.owner       || '';
+  setSelectValue('f-owner', r.owner || '');
   const cSel = document.getElementById('f-contractor');
   if ([...cSel.options].some(o => o.value === r.contractor)) cSel.value = r.contractor;
   else cSel.value = '';
@@ -4157,7 +4169,7 @@ function applyProjectInfo() {
   if (!name || !settings.projectInfo || !settings.projectInfo[name]) return;
   const info = settings.projectInfo[name];
 
-  if (info.owner) document.getElementById('f-owner').value = info.owner;
+  if (info.owner) setSelectValue('f-owner', info.owner);
 
   // 總承包商：若清單裡沒有這個名稱，先補進 option 再選取
   if (info.contractor) {
@@ -4371,6 +4383,72 @@ function removeSiteManager(idx) {
   persistSettings();
   renderSiteManagerDropdown();
   renderSiteManagerList();
+  showToast('已刪除：' + name);
+}
+
+// 設定下拉選單的值；若該值不在選項中，先補一個 option 再選（避免載入舊資料時選不到）
+function setSelectValue(id, val) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  if (!val) { sel.value = ''; return; }
+  if (![...sel.options].some(o => o.value === val)) {
+    const o = document.createElement('option');
+    o.value = val; o.textContent = val;
+    sel.appendChild(o);
+  }
+  sel.value = val;
+}
+
+// ════════════════ Owner Names（業主）════════════════
+function renderOwnerDropdown() {
+  const sel = document.getElementById('f-owner');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">請選擇業主</option>';
+  (settings.owners || []).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    if (name === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderOwnerList() {
+  const list = document.getElementById('owner-list');
+  if (!list) return;
+  if (!settings.owners || !settings.owners.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0;">尚無業主，請新增。</div>';
+    return;
+  }
+  list.innerHTML = settings.owners.map((name, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+      <span style="font-size:13px;flex:1;">${name}</span>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:var(--danger);" onclick="removeOwnerName(${i})">刪除</button>
+    </div>
+  `).join('');
+}
+
+function addOwnerName() {
+  const input = document.getElementById('cfg-new-owner');
+  const name = input.value.trim();
+  if (!name) { showToast('請輸入業主名稱'); return; }
+  if (!Array.isArray(settings.owners)) settings.owners = [];
+  if (settings.owners.includes(name)) { showToast('此業主已存在'); return; }
+  settings.owners.push(name);
+  persistSettings();
+  input.value = '';
+  renderOwnerDropdown();
+  renderOwnerList();
+  showToast('已新增：' + name);
+}
+
+function removeOwnerName(idx) {
+  const name = settings.owners[idx];
+  if (!confirm('確定刪除「' + name + '」？')) return;
+  settings.owners.splice(idx, 1);
+  persistSettings();
+  renderOwnerDropdown();
+  renderOwnerList();
   showToast('已刪除：' + name);
 }
 
@@ -4942,8 +5020,6 @@ function saveSettings() {
   settings.contractQtyUnit  = parseFloat(document.getElementById('cfg-qty-unit').value)  || 0;
   settings.contractQtyStick = parseFloat(document.getElementById('cfg-qty-stick').value) || 0;
   settings.contractQty      = settings.contractQtyUnit + settings.contractQtyStick;
-  var newGasUrl = document.getElementById('cfg-gas-url').value.trim();
-  if (newGasUrl) { settings.gasUrl = newGasUrl; GAS_URL = newGasUrl; }
   persistSettings();
   if (settings.driveId) { var dr = document.getElementById('f-drive-root'); if(dr) dr.value = settings.driveId; }
   updateProgress();
@@ -5195,7 +5271,7 @@ function uploadPhoto(file, seqNo) {
   compressImage(file, 1200, 0.8, function(b64, mimeType) {
     fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'uploadPhoto', date: date, mime: mimeType, name: _photoName, photo: b64 })
+      body: JSON.stringify({ action: 'uploadPhoto', date: date, project: (document.getElementById('f-project').value||''), mime: mimeType, name: _photoName, photo: b64 })
     })
       .then(function(r) { return r.json(); })
       .then(function(res) {
@@ -5310,7 +5386,7 @@ function uploadDefectPhoto(fileOrList, seq, obj) {
     compressImage(file, 1200, 0.8, function(b64, mimeType) {
       fetch(GAS_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: _defectName, photo: b64 })
+        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, project: (document.getElementById('f-project').value||''), mime: mimeType, name: _defectName, photo: b64 })
       })
         .then(function(r) { return r.json(); })
         .then(function(res) {
@@ -5397,7 +5473,7 @@ function uploadIssuesPhoto(fileList) {
     compressImage(file, 1200, 0.8, function(b64, mimeType) {
       fetch(GAS_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, mime: mimeType, name: _issueName, photo: b64 })
+        body: JSON.stringify({ action: 'uploadDefectPhoto', date: date, project: (document.getElementById('f-project').value||''), mime: mimeType, name: _issueName, photo: b64 })
       })
         .then(function(r) { return r.json(); })
         .then(function(res) {
